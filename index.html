@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NutriTrack - บันทึกสารอาหารเพื่อลดน้ำหนัก</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwindcss.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: { 50:'#ecfdf5',100:'#d1fae5',200:'#a7f3d0',300:'#6ee7b7',400:'#34d399',500:'#10b981',600:'#059669',700:'#047857',800:'#065f46',900:'#064e3b' },
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700&display=swap');
+    body { font-family: 'Noto Sans Thai', sans-serif; }
+    .macro-bar { transition: width 0.5s ease; }
+    .meal-card { transition: all 0.2s ease; }
+    .meal-card:hover { transform: translateY(-1px); }
+    .preset-btn { transition: all 0.15s ease; }
+    .preset-btn:hover { transform: scale(1.03); }
+    .preset-btn:active { transform: scale(0.97); }
+    .food-item { animation: slideIn 0.25s ease; }
+    @keyframes slideIn { from { opacity:0; transform:translateX(-12px); } to { opacity:1; transform:translateX(0); } }
+    .search-dropdown {
+      max-height: 220px;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: #a7f3d0 transparent;
+    }
+    .search-dropdown::-webkit-scrollbar { width: 5px; }
+    .search-dropdown::-webkit-scrollbar-thumb { background: #a7f3d0; border-radius: 3px; }
+    .search-item { transition: background 0.1s; }
+    .search-item:hover { background: #ecfdf5; }
+    .search-item.active { background: #d1fae5; }
+    .fav-btn { transition: all 0.15s ease; }
+    .fav-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(16,185,129,0.15); }
+    .fav-btn:active { transform: translateY(0); }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-thumb { background: #a7f3d0; border-radius: 3px; }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-brand-50 via-white to-gray-50 min-h-screen">
+
+  <!-- Header -->
+  <header class="bg-white/80 backdrop-blur-md border-b border-brand-100 sticky top-0 z-50">
+    <div class="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <div class="w-9 h-9 bg-gradient-to-br from-brand-400 to-brand-600 rounded-xl flex items-center justify-center shadow-md">
+          <span class="text-white text-lg">🥗</span>
+        </div>
+        <div>
+          <h1 class="text-lg font-bold text-brand-800 leading-tight">NutriTrack</h1>
+          <p class="text-[10px] text-brand-500 -mt-0.5">บันทึกสารอาหารเพื่อลดน้ำหนัก</p>
+        </div>
+      </div>
+      <div class="text-right">
+        <p class="text-xs text-gray-400" id="currentDate"></p>
+        <button onclick="resetAll()" class="text-[10px] text-red-400 hover:text-red-600 mt-0.5 transition">รีเซ็ตข้อมูล</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-4xl mx-auto px-4 py-6 space-y-6">
+
+    <!-- ===== DASHBOARD ===== -->
+    <section class="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+      <!-- Calorie Ring -->
+      <div class="bg-white rounded-2xl shadow-sm border border-brand-100 p-6 flex flex-col items-center">
+        <h2 class="text-sm font-semibold text-gray-500 mb-4 tracking-wide uppercase">แคลอรีวันนี้</h2>
+        <div class="relative w-44 h-44">
+          <svg class="w-full h-full -rotate-90" viewBox="0 0 160 160">
+            <circle cx="80" cy="80" r="70" fill="none" stroke="#e5e7eb" stroke-width="12" />
+            <circle id="calProgressCircle" cx="80" cy="80" r="70" fill="none" stroke="url(#calGrad)" stroke-width="12" stroke-linecap="round" style="stroke-dasharray:440;stroke-dashoffset:440;transition:stroke-dashoffset 0.6s ease" />
+            <defs>
+              <linearGradient id="calGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#34d399" />
+                <stop offset="100%" stop-color="#059669" />
+              </linearGradient>
+            </defs>
+          </svg>
+          <div class="absolute inset-0 flex flex-col items-center justify-center">
+            <span class="text-3xl font-bold text-brand-700" id="calConsumed">0</span>
+            <span class="text-xs text-gray-400">kcal</span>
+            <span class="text-[10px] text-gray-300 mt-1">จาก <span id="calGoalDisplay">1,800</span></span>
+          </div>
+        </div>
+        <div class="flex justify-between w-full mt-5 text-center">
+          <div class="flex-1">
+            <p class="text-xs text-gray-400">กินไปแล้ว</p>
+            <p class="text-lg font-bold text-brand-600" id="calEaten">0</p>
+          </div>
+          <div class="w-px bg-gray-100"></div>
+          <div class="flex-1">
+            <p class="text-xs text-gray-400">เหลืออีก</p>
+            <p class="text-lg font-bold text-amber-500" id="calRemaining">1,800</p>
+          </div>
+          <div class="w-px bg-gray-100"></div>
+          <div class="flex-1">
+            <p class="text-xs text-gray-400">เกินเป้า</p>
+            <p class="text-lg font-bold text-red-400" id="calOver">0</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Macros Tracker -->
+      <div class="bg-white rounded-2xl shadow-sm border border-brand-100 p-6">
+        <h2 class="text-sm font-semibold text-gray-500 mb-5 tracking-wide uppercase">สารอาหารหลัก (Macros)</h2>
+        <div class="space-y-5">
+          <!-- Protein -->
+          <div>
+            <div class="flex justify-between items-end mb-1.5">
+              <div class="flex items-center gap-2">
+                <span class="w-7 h-7 rounded-lg bg-blue-100 flex items-center justify-center text-sm">🥩</span>
+                <span class="text-sm font-medium text-gray-700">โปรตีน</span>
+              </div>
+              <span class="text-sm text-gray-500"><span id="proteinVal" class="font-semibold text-blue-600">0</span> / 120g</span>
+            </div>
+            <div class="w-full h-3 bg-gray-100 rounded-full overflow-hidden">
+              <div class="macro-bar h-full bg-gradient-to-r from-blue-400 to-blue-600 rounded-full" id="proteinBar" style="width:0%"></div>
+            </div>
+          </div>
+          <!-- Carbs -->
+          <div>
+            <div class="flex justify-between items-end mb-1.5">
+              <div class="flex items-center gap-2">
+                <span class="w-7 h-7 rounded-lg bg-orange-100 flex items-center justify-center text-sm">🍚</span>
+                <span class="text-sm font-medium text-gray-700">คาร์โบไฮเดรต</span>
+              </div>
+              <span class="text-sm text-gray-500"><span id="carbsVal" class="font-semibold text-orange-600">0</span> / 150g</span>
+            </div>
+            <div class="w-full h-3 bg-gray-100 rounded-full overflow-hidden">
+              <div class="macro-bar h-full bg-gradient-to-r from-orange-400 to-orange-600 rounded-full" id="carbsBar" style="width:0%"></div>
+            </div>
+          </div>
+          <!-- Fats -->
+          <div>
+            <div class="flex justify-between items-end mb-1.5">
+              <div class="flex items-center gap-2">
+                <span class="w-7 h-7 rounded-lg bg-red-100 flex items-center justify-center text-sm">🧈</span>
+                <span class="text-sm font-medium text-gray-700">ไขมัน</span>
+              </div>
+              <span class="text-sm text-gray-500"><span id="fatsVal" class="font-semibold text-red-500">0</span> / 50g</span>
+            </div>
+            <div class="w-full h-3 bg-gray-100 rounded-full overflow-hidden">
+              <div class="macro-bar h-full bg-gradient-to-r from-red-400 to-red-500 rounded-full" id="fatsBar" style="width:0%"></div>
+            </div>
+          </div>
+        </div>
+        <div class="mt-6 flex flex-wrap gap-2">
+          <span class="text-[10px] px-2.5 py-1 rounded-full bg-blue-50 text-blue-600 border border-blue-100" id="proteinStatus">โปรตีน: 0%</span>
+          <span class="text-[10px] px-2.5 py-1 rounded-full bg-orange-50 text-orange-600 border border-orange-100" id="carbsStatus">คาร์บ: 0%</span>
+          <span class="text-[10px] px-2.5 py-1 rounded-full bg-red-50 text-red-500 border border-red-100" id="fatsStatus">ไขมัน: 0%</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== SMART SEARCH + QUICK ADD ===== -->
+    <section class="bg-white rounded-2xl shadow-sm border border-brand-100 p-5">
+      <h2 class="text-sm font-semibold text-gray-500 mb-4 tracking-wide uppercase">🔍 ค้นหาและเพิ่มอาหาร</h2>
+
+      <!-- Search Bar -->
+      <div class="relative mb-4">
+        <div class="relative">
+          <svg class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+          <input type="text" id="searchInput" placeholder="พิมพ์ชื่ออาหารเพื่อค้นหา... เช่น ข้าว, ไก่, ไข่" autocomplete="off" class="w-full border border-gray-200 rounded-xl pl-10 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-300 transition bg-gray-50/50" />
+          <button id="searchClear" onclick="clearSearch()" class="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-gray-500 text-xs hidden transition">✕</button>
+        </div>
+        <div id="searchDropdown" class="hidden absolute z-40 w-full mt-1 bg-white border border-brand-100 rounded-xl shadow-lg overflow-hidden search-dropdown"></div>
+      </div>
+
+      <!-- Favorites Quick-Add -->
+      <div class="mb-4">
+        <div class="flex items-center justify-between mb-2">
+          <p class="text-xs font-medium text-gray-500">⭐ เมนูที่กินบ่อย (กดเพิ่มเข้ามื้อที่เลือก)</p>
+          <select id="favMealSelect" class="text-[11px] border border-brand-200 rounded-lg px-2 py-1 bg-brand-50 text-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-300">
+            <option value="breakfast">🌅 มื้อเช้า</option>
+            <option value="lunch" selected>☀️ มื้อกลางวัน</option>
+            <option value="dinner">🌙 มื้อเย็น</option>
+            <option value="snack">🍪 ของว่าง</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-5 gap-2" id="favButtons"></div>
+      </div>
+    </section>
+
+    <!-- ===== PRESET QUICK-ADD ===== -->
+    <section class="bg-white rounded-2xl shadow-sm border border-brand-100 p-5">
+      <h2 class="text-sm font-semibold text-gray-500 mb-3 tracking-wide uppercase">🍽️ อาหารแนะนำด่วน</h2>
+      <p class="text-xs text-gray-400 mb-3">เลือกมื้อปลายทางแล้วกดปุ่มอาหารเพื่อเพิ่มอัตโนมัติ</p>
+      <div class="flex items-center gap-2 mb-3">
+        <label class="text-xs text-gray-500">เพิ่มเข้ามื้อ:</label>
+        <select id="presetMealSelect" class="text-xs border border-brand-200 rounded-lg px-2.5 py-1.5 bg-brand-50 text-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-300">
+          <option value="breakfast">🌅 มื้อเช้า</option>
+          <option value="lunch">☀️ มื้อกลางวัน</option>
+          <option value="dinner">🌙 มื้อเย็น</option>
+          <option value="snack">🍪 ของว่าง</option>
+        </select>
+      </div>
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2" id="presetButtons"></div>
+    </section>
+
+    <!-- ===== QUICK ADD FORM ===== -->
+    <section class="bg-white rounded-2xl shadow-sm border border-brand-100 p-5">
+      <h2 class="text-sm font-semibold text-gray-500 mb-4 tracking-wide uppercase">📝 เพิ่มรายการอาหารแบบกำหนดเอง</h2>
+      <form id="foodForm" class="space-y-3">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div class="sm:col-span-2">
+            <label class="text-xs text-gray-500 mb-1 block">ชื่ออาหาร</label>
+            <input type="text" id="foodName" required placeholder="เช่น ข้าวผัดกระเพราหมู" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-300 transition" />
+          </div>
+          <div>
+            <label class="text-xs text-gray-500 mb-1 block">แคลอรี (kcal)</label>
+            <input type="number" id="foodCal" required min="0" placeholder="0" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-300 transition" />
+          </div>
+          <div>
+            <label class="text-xs text-gray-500 mb-1 block">มื้ออาหาร</label>
+            <select id="foodMeal" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-300 transition bg-white">
+              <option value="breakfast">🌅 มื้อเช้า</option>
+              <option value="lunch">☀️ มื้อกลางวัน</option>
+              <option value="dinner">🌙 มื้อเย็น</option>
+              <option value="snack">🍪 ของว่าง</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-xs text-gray-500 mb-1 block">โปรตีน (g)</label>
+            <input type="number" id="foodProtein" required min="0" step="0.1" placeholder="0" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-300 transition" />
+          </div>
+          <div>
+            <label class="text-xs text-gray-500 mb-1 block">คาร์โบไฮเดรต (g)</label>
+            <input type="number" id="foodCarbs" required min="0" step="0.1" placeholder="0" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-300 transition" />
+          </div>
+          <div>
+            <label class="text-xs text-gray-500 mb-1 block">ไขมัน (g)</label>
+            <input type="number" id="foodFats" required min="0" step="0.1" placeholder="0" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-300 transition" />
+          </div>
+        </div>
+        <button type="submit" class="w-full bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-700 text-white font-semibold py-3 rounded-xl shadow-md shadow-brand-200 transition-all active:scale-[0.98] text-sm">
+          📝 บันทึกอาหาร
+        </button>
+      </form>
+    </section>
+
+    <!-- ===== FOOD DIARY ===== -->
+    <section class="space-y-4" id="diarySection">
+      <h2 class="text-sm font-semibold text-gray-500 tracking-wide uppercase px-1">📖 บันทึกอาหารวันนี้</h2>
+
+      <!-- Breakfast -->
+      <div class="bg-white rounded-2xl shadow-sm border border-brand-100 overflow-hidden meal-card">
+        <div class="bg-gradient-to-r from-orange-50 to-amber-50 px-5 py-3 flex items-center justify-between border-b border-orange-100">
+          <div class="flex items-center gap-2">
+            <span class="text-lg">🌅</span>
+            <h3 class="font-semibold text-gray-700 text-sm">มื้อเช้า</h3>
+          </div>
+          <span class="text-xs font-medium text-orange-600 bg-orange-100 px-2.5 py-0.5 rounded-full" id="breakfastTotal">0 kcal</span>
+        </div>
+        <div class="divide-y divide-gray-50" id="breakfastList">
+          <div class="px-5 py-6 text-center text-xs text-gray-300">ยังไม่มีรายการอาหาร</div>
+        </div>
+      </div>
+
+      <!-- Lunch -->
+      <div class="bg-white rounded-2xl shadow-sm border border-brand-100 overflow-hidden meal-card">
+        <div class="bg-gradient-to-r from-yellow-50 to-lime-50 px-5 py-3 flex items-center justify-between border-b border-yellow-100">
+          <div class="flex items-center gap-2">
+            <span class="text-lg">☀️</span>
+            <h3 class="font-semibold text-gray-700 text-sm">มื้อกลางวัน</h3>
+          </div>
+          <span class="text-xs font-medium text-yellow-600 bg-yellow-100 px-2.5 py-0.5 rounded-full" id="lunchTotal">0 kcal</span>
+        </div>
+        <div class="divide-y divide-gray-50" id="lunchList">
+          <div class="px-5 py-6 text-center text-xs text-gray-300">ยังไม่มีรายการอาหาร</div>
+        </div>
+      </div>
+
+      <!-- Dinner -->
+      <div class="bg-white rounded-2xl shadow-sm border border-brand-100 overflow-hidden meal-card">
+        <div class="bg-gradient-to-r from-indigo-50 to-purple-50 px-5 py-3 flex items-center justify-between border-b border-indigo-100">
+          <div class="flex items-center gap-2">
+            <span class="text-lg">🌙</span>
+            <h3 class="font-semibold text-gray-700 text-sm">มื้อเย็น</h3>
+          </div>
+          <span class="text-xs font-medium text-indigo-600 bg-indigo-100 px-2.5 py-0.5 rounded-full" id="dinnerTotal">0 kcal</span>
+        </div>
+        <div class="divide-y divide-gray-50" id="dinnerList">
+          <div class="px-5 py-6 text-center text-xs text-gray-300">ยังไม่มีรายการอาหาร</div>
+        </div>
+      </div>
+
+      <!-- Snack -->
+      <div class="bg-white rounded-2xl shadow-sm border border-brand-100 overflow-hidden meal-card">
+        <div class="bg-gradient-to-r from-pink-50 to-rose-50 px-5 py-3 flex items-center justify-between border-b border-pink-100">
+          <div class="flex items-center gap-2">
+            <span class="text-lg">🍪</span>
+            <h3 class="font-semibold text-gray-700 text-sm">ของว่าง</h3>
+          </div>
+          <span class="text-xs font-medium text-pink-600 bg-pink-100 px-2.5 py-0.5 rounded-full" id="snackTotal">0 kcal</span>
+        </div>
+        <div class="divide-y divide-gray-50" id="snackList">
+          <div class="px-5 py-6 text-center text-xs text-gray-300">ยังไม่มีรายการอาหาร</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="text-center py-6">
+      <p class="text-[10px] text-gray-300">NutriTrack v2.0 · สร้างด้วย ❤️ เพื่อสุขภาพที่ดี</p>
+    </footer>
+  </main>
+
+  <!-- Toast notification -->
+  <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-brand-700 text-white text-sm px-5 py-2.5 rounded-full shadow-lg opacity-0 pointer-events-none transition-all duration-300 z-50 translate-y-4">
+    <span id="toastMsg"></span>
+  </div>
+
+<script>
+// ========== STATE ==========
+const GOALS = { calories: 1800, protein: 120, carbs: 150, fats: 50 };
+const MEALS = { breakfast: 'มื้อเช้า', lunch: 'มื้อกลางวัน', dinner: 'มื้อเย็น', snack: 'ของว่าง' };
+
+// ========== MOCK FOOD DATABASE (20 เมนู) ==========
+const FOOD_DB = [
+  { name: 'ข้าวกะเพราไก่ไข่ดาว', cal: 550, p: 28, c: 65, f: 18, emoji: '🍛', meal: 'lunch' },
+  { name: 'ข้าวผัดหมู', cal: 480, p: 18, c: 60, f: 16, emoji: '🍚', meal: 'lunch' },
+  { name: 'ก๋วยเตี๋ยวเส้นเล็กน้ำใส', cal: 320, p: 15, c: 45, f: 8, emoji: '🍜', meal: 'lunch' },
+  { name: 'ส้มตำไทย', cal: 150, p: 5, c: 22, f: 5, emoji: '🥗', meal: 'lunch' },
+  { name: 'อกไก่ต้ม', cal: 165, p: 31, c: 0, f: 4, emoji: '🍗', meal: 'lunch' },
+  { name: 'ไข่เจียว', cal: 180, p: 12, c: 2, f: 14, emoji: '🍳', meal: 'breakfast' },
+  { name: 'ข้าวกล้อง 1 ทัพพี', cal: 120, p: 3, c: 25, f: 1, emoji: '🍚', meal: 'lunch' },
+  { name: 'นมจืด 1 แก้ว', cal: 120, p: 8, c: 12, f: 5, emoji: '🥛', meal: 'breakfast' },
+  { name: 'กาแฟดำ (ไม่ใส่น้ำตาล)', cal: 5, p: 0, c: 1, f: 0, emoji: '☕', meal: 'breakfast' },
+  { name: 'อกไก่นุ่ม', cal: 120, p: 25, c: 0, f: 2, emoji: '🍗', meal: 'lunch' },
+  { name: 'ข้าวมันไก่', cal: 600, p: 20, c: 75, f: 25, emoji: '🍚', meal: 'lunch' },
+  { name: 'ไข่ต้ม 1 ฟอง', cal: 75, p: 7, c: 0, f: 5, emoji: '🥚', meal: 'breakfast' },
+  { name: 'เวย์โปรตีน 1 สกู๊ป', cal: 120, p: 25, c: 3, f: 1, emoji: '🥤', meal: 'snack' },
+  { name: 'ข้าวเหนียวหมูปิ้ง', cal: 400, p: 15, c: 55, f: 14, emoji: '🍖', meal: 'breakfast' },
+  { name: 'ก๋วยเตี๋ยวต้มยำ', cal: 350, p: 15, c: 45, f: 12, emoji: '🍜', meal: 'lunch' },
+  { name: 'กล้วยหอม 1 ลูก', cal: 105, p: 1, c: 27, f: 0, emoji: '🍌', meal: 'snack' },
+  { name: 'ข้าวต้มหมู', cal: 280, p: 12, c: 40, f: 7, emoji: '🥣', meal: 'breakfast' },
+  { name: 'ผัดผักบุ้งไฟแดง', cal: 120, p: 4, c: 10, f: 7, emoji: '🥬', meal: 'dinner' },
+  { name: 'ต้มจืดเต้าหู้หมูสับ', cal: 200, p: 18, c: 8, f: 11, emoji: '🍲', meal: 'dinner' },
+  { name: 'โยเกิร์ตไขมันต่ำ', cal: 90, p: 8, c: 12, f: 1, emoji: '🥛', meal: 'snack' },
+];
+
+// ========== FAVORITES (Top 5 เมนูคนลดน้ำหนักกินบ่อย) ==========
+const FAVORITES = [
+  { name: 'ไข่ต้ม 1 ฟอง', cal: 75, p: 7, c: 0, f: 5, emoji: '🥚' },
+  { name: 'อกไก่นุ่ม', cal: 120, p: 25, c: 0, f: 2, emoji: '🍗' },
+  { name: 'เวย์โปรตีน 1 สกู๊ป', cal: 120, p: 25, c: 3, f: 1, emoji: '🥤' },
+  { name: 'ข้าวกล้อง 1 ทัพพี', cal: 120, p: 3, c: 25, f: 1, emoji: '🍚' },
+  { name: 'กล้วยหอม 1 ลูก', cal: 105, p: 1, c: 27, f: 0, emoji: '🍌' },
+];
+
+// ========== PRESETS ==========
+const PRESETS = [
+  { name: 'อกไก่นุ่ม', cal: 120, p: 25, c: 0, f: 2, emoji: '🍗' },
+  { name: 'ข้าวมันไก่', cal: 600, p: 20, c: 75, f: 25, emoji: '🍚' },
+  { name: 'ไข่ต้ม 1 ฟอง', cal: 75, p: 7, c: 0, f: 5, emoji: '🥚' },
+  { name: 'เวย์โปรตีน 1 สกู๊ป', cal: 120, p: 25, c: 3, f: 1, emoji: '🥤' },
+  { name: 'ข้าวเหนียวหมูปิ้ง', cal: 400, p: 15, c: 55, f: 14, emoji: '🍖' },
+  { name: 'ส้มตำ', cal: 150, p: 5, c: 20, f: 6, emoji: '🥗' },
+  { name: 'ก๋วยเตี๋ยวต้มยำ', cal: 350, p: 15, c: 45, f: 12, emoji: '🍜' },
+  { name: 'กล้วยหอม 1 ลูก', cal: 105, p: 1, c: 27, f: 0, emoji: '🍌' },
+];
+
+let foodLog = JSON.parse(localStorage.getItem('nutritrack_log') || '[]');
+let searchActiveIndex = -1;
+
+// ========== INIT ==========
+function init() {
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('th-TH', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+  document.getElementById('currentDate').textContent = dateStr;
+  renderPresets();
+  renderFavorites();
+  renderAll();
+
+  document.getElementById('foodForm').addEventListener('submit', handleAddFood);
+
+  // Search
+  const searchInput = document.getElementById('searchInput');
+  searchInput.addEventListener('input', handleSearch);
+  searchInput.addEventListener('keydown', handleSearchKeydown);
+  searchInput.addEventListener('focus', () => { if (searchInput.value.trim()) handleSearch(); });
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('#searchInput') && !e.target.closest('#searchDropdown')) {
+      document.getElementById('searchDropdown').classList.add('hidden');
+    }
+  });
+}
+
+// ========== SEARCH ==========
+function handleSearch() {
+  const query = document.getElementById('searchInput').value.trim().toLowerCase();
+  const dropdown = document.getElementById('searchDropdown');
+  const clearBtn = document.getElementById('searchClear');
+
+  clearBtn.classList.toggle('hidden', !query);
+
+  if (!query) {
+    dropdown.classList.add('hidden');
+    searchActiveIndex = -1;
+    return;
+  }
+
+  const results = FOOD_DB.filter(f => f.name.toLowerCase().includes(query));
+  searchActiveIndex = -1;
+
+  if (results.length === 0) {
+    dropdown.innerHTML = '<div class="px-4 py-6 text-center text-xs text-gray-400">ไม่พบเมนูที่ค้นหา 🔍</div>';
+    dropdown.classList.remove('hidden');
+    return;
+  }
+
+  dropdown.innerHTML = results.map((f, i) => `
+    <button type="button" onclick="selectSearchResult(${FOOD_DB.indexOf(f)})" class="search-item w-full flex items-center gap-3 px-4 py-2.5 text-left border-b border-gray-50 last:border-0 hover:bg-brand-50 transition" data-index="${i}">
+      <span class="text-lg flex-shrink-0">${f.emoji}</span>
+      <div class="flex-1 min-w-0">
+        <p class="text-sm font-medium text-gray-700 truncate">${highlightMatch(f.name, query)}</p>
+        <div class="flex items-center gap-2 mt-0.5">
+          <span class="text-[10px] text-brand-600 font-semibold">${f.cal} kcal</span>
+          <span class="text-[10px] text-gray-300">·</span>
+          <span class="text-[10px] text-blue-500">P:${f.p}g</span>
+          <span class="text-[10px] text-orange-500">C:${f.c}g</span>
+          <span class="text-[10px] text-red-400">F:${f.f}g</span>
+        </div>
+      </div>
+      <svg class="w-4 h-4 text-gray-300 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+    </button>
+  `).join('');
+  dropdown.classList.remove('hidden');
+}
+
+function highlightMatch(text, query) {
+  const idx = text.toLowerCase().indexOf(query);
+  if (idx === -1) return text;
+  return text.slice(0, idx) + '<span class="bg-yellow-100 text-yellow-800 font-semibold">' + text.slice(idx, idx + query.length) + '</span>' + text.slice(idx + query.length);
+}
+
+function handleSearchKeydown(e) {
+  const dropdown = document.getElementById('searchDropdown');
+  if (dropdown.classList.contains('hidden')) return;
+  const items = dropdown.querySelectorAll('.search-item');
+  if (!items.length) return;
+
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    searchActiveIndex = Math.min(searchActiveIndex + 1, items.length - 1);
+    items.forEach((el, i) => el.classList.toggle('active', i === searchActiveIndex));
+    items[searchActiveIndex].scrollIntoView({ block: 'nearest' });
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    searchActiveIndex = Math.max(searchActiveIndex - 1, 0);
+    items.forEach((el, i) => el.classList.toggle('active', i === searchActiveIndex));
+    items[searchActiveIndex].scrollIntoView({ block: 'nearest' });
+  } else if (e.key === 'Enter') {
+    e.preventDefault();
+    if (searchActiveIndex >= 0 && items[searchActiveIndex]) {
+      items[searchActiveIndex].click();
+    }
+  } else if (e.key === 'Escape') {
+    dropdown.classList.add('hidden');
+    searchActiveIndex = -1;
+  }
+}
+
+function selectSearchResult(dbIndex) {
+  const f = FOOD_DB[dbIndex];
+  document.getElementById('foodName').value = f.name;
+  document.getElementById('foodCal').value = f.cal;
+  document.getElementById('foodProtein').value = f.p;
+  document.getElementById('foodCarbs').value = f.c;
+  document.getElementById('foodFats').value = f.f;
+  if (f.meal) document.getElementById('foodMeal').value = f.meal;
+  clearSearch();
+  showToast(`เลือก "${f.name}" แล้ว — กดบันทึกอาหาร ✓`);
+}
+
+function clearSearch() {
+  document.getElementById('searchInput').value = '';
+  document.getElementById('searchDropdown').classList.add('hidden');
+  document.getElementById('searchClear').classList.add('hidden');
+  searchActiveIndex = -1;
+}
+
+// ========== FAVORITES ==========
+function renderFavorites() {
+  const container = document.getElementById('favButtons');
+  container.innerHTML = FAVORITES.map((f, i) => `
+    <button onclick="addFavorite(${i})" class="fav-btn flex flex-col items-center gap-1 p-3 rounded-xl border-2 border-brand-200 bg-gradient-to-b from-brand-50 to-white hover:border-brand-400 hover:shadow-md">
+      <span class="text-xl">${f.emoji}</span>
+      <span class="text-[11px] font-semibold text-gray-700 leading-tight text-center">${f.name}</span>
+      <span class="text-[10px] text-brand-600 font-bold">${f.cal} kcal</span>
+      <span class="text-[9px] text-gray-400">P:${f.p} C:${f.c} F:${f.f}</span>
+    </button>
+  `).join('');
+}
+
+function addFavorite(index) {
+  const f = FAVORITES[index];
+  const meal = document.getElementById('favMealSelect').value;
+  addFood({ name: f.name, cal: f.cal, protein: f.p, carbs: f.c, fats: f.f, meal });
+  showToast(`เพิ่ม "${f.name}" ไปยัง${MEALS[meal]}แล้ว ✓`);
+}
+
+// ========== PRESETS ==========
+function renderPresets() {
+  const container = document.getElementById('presetButtons');
+  container.innerHTML = PRESETS.map((p, i) => `
+    <button onclick="addPreset(${i})" class="preset-btn flex flex-col items-center gap-1 p-3 rounded-xl border border-brand-100 bg-brand-50/50 hover:bg-brand-100 hover:border-brand-200 hover:shadow-sm">
+      <span class="text-xl">${p.emoji}</span>
+      <span class="text-xs font-medium text-gray-700 leading-tight text-center">${p.name}</span>
+      <span class="text-[10px] text-brand-600 font-semibold">${p.cal} kcal</span>
+      <span class="text-[9px] text-gray-400">P:${p.p} C:${p.c} F:${p.f}</span>
+    </button>
+  `).join('');
+}
+
+function addPreset(index) {
+  const p = PRESETS[index];
+  const meal = document.getElementById('presetMealSelect').value;
+  addFood({ name: p.name, cal: p.cal, protein: p.p, carbs: p.c, fats: p.f, meal });
+  showToast(`เพิ่ม "${p.name}" ไปยัง${MEALS[meal]}แล้ว ✓`);
+}
+
+// ========== FORM ==========
+function handleAddFood(e) {
+  e.preventDefault();
+  const name = document.getElementById('foodName').value.trim();
+  const cal = parseFloat(document.getElementById('foodCal').value) || 0;
+  const protein = parseFloat(document.getElementById('foodProtein').value) || 0;
+  const carbs = parseFloat(document.getElementById('foodCarbs').value) || 0;
+  const fats = parseFloat(document.getElementById('foodFats').value) || 0;
+  const meal = document.getElementById('foodMeal').value;
+
+  if (!name) return;
+  addFood({ name, cal, protein, carbs, fats, meal });
+  showToast(`บันทึก "${name}" เรียบร้อย ✓`);
+  e.target.reset();
+}
+
+// ========== CORE ==========
+function addFood(item) {
+  item.id = Date.now() + Math.random();
+  item.time = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+  foodLog.push(item);
+  save();
+  renderAll();
+}
+
+function deleteFood(id) {
+  foodLog = foodLog.filter(f => f.id !== id);
+  save();
+  renderAll();
+  showToast('ลบรายการแล้ว 🗑️');
+}
+
+function save() {
+  localStorage.setItem('nutritrack_log', JSON.stringify(foodLog));
+}
+
+function resetAll() {
+  if (confirm('ต้องการล้างข้อมูลทั้งหมดใช่หรือไม่?')) {
+    foodLog = [];
+    save();
+    renderAll();
+    showToast('รีเซ็ตข้อมูลทั้งหมดแล้ว');
+  }
+}
+
+// ========== RENDER ==========
+function renderAll() {
+  const totals = foodLog.reduce((acc, f) => {
+    acc.cal += f.cal;
+    acc.protein += f.protein;
+    acc.carbs += f.carbs;
+    acc.fats += f.fats;
+    return acc;
+  }, { cal: 0, protein: 0, carbs: 0, fats: 0 });
+
+  // Calorie ring
+  const calPct = Math.min((totals.cal / GOALS.calories) * 100, 100);
+  const progressCircle = document.getElementById('calProgressCircle');
+  if (progressCircle) {
+    const offset = 440 - (440 * calPct) / 100;
+    progressCircle.style.strokeDashoffset = offset;
+    progressCircle.style.stroke = totals.cal > GOALS.calories ? '#f87171' : '';
+  }
+
+  document.getElementById('calConsumed').textContent = Math.round(totals.cal).toLocaleString();
+  document.getElementById('calEaten').textContent = Math.round(totals.cal).toLocaleString();
+  const remaining = Math.max(GOALS.calories - totals.cal, 0);
+  const over = Math.max(totals.cal - GOALS.calories, 0);
+  document.getElementById('calRemaining').textContent = Math.round(remaining).toLocaleString();
+  document.getElementById('calOver').textContent = over > 0 ? `+${Math.round(over).toLocaleString()}` : '0';
+  document.getElementById('calOver').className = over > 0 ? 'text-lg font-bold text-red-500' : 'text-lg font-bold text-gray-300';
+
+  // Macros bars
+  const pPct = Math.min((totals.protein / GOALS.protein) * 100, 100);
+  const cPct = Math.min((totals.carbs / GOALS.carbs) * 100, 100);
+  const fPct = Math.min((totals.fats / GOALS.fats) * 100, 100);
+
+  document.getElementById('proteinBar').style.width = pPct + '%';
+  document.getElementById('carbsBar').style.width = cPct + '%';
+  document.getElementById('fatsBar').style.width = fPct + '%';
+  document.getElementById('proteinVal').textContent = totals.protein.toFixed(1);
+  document.getElementById('carbsVal').textContent = totals.carbs.toFixed(1);
+  document.getElementById('fatsVal').textContent = totals.fats.toFixed(1);
+  document.getElementById('proteinStatus').textContent = `โปรตีน: ${Math.round(pPct)}%`;
+  document.getElementById('carbsStatus').textContent = `คาร์บ: ${Math.round(cPct)}%`;
+  document.getElementById('fatsStatus').textContent = `ไขมัน: ${Math.round(fPct)}%`;
+
+  // Food diary
+  ['breakfast', 'lunch', 'dinner', 'snack'].forEach(meal => {
+    const items = foodLog.filter(f => f.meal === meal);
+    const list = document.getElementById(meal + 'List');
+    const mealCal = items.reduce((s, f) => s + f.cal, 0);
+    document.getElementById(meal + 'Total').textContent = Math.round(mealCal).toLocaleString() + ' kcal';
+
+    if (items.length === 0) {
+      list.innerHTML = '<div class="px-5 py-6 text-center text-xs text-gray-300">ยังไม่มีรายการอาหาร</div>';
+    } else {
+      list.innerHTML = items.map(f => `
+        <div class="food-item flex items-center justify-between px-5 py-3 hover:bg-gray-50/50 transition group">
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-medium text-gray-700 truncate">${f.name}</p>
+            <div class="flex items-center gap-2 mt-0.5 flex-wrap">
+              <span class="text-[10px] text-brand-600 font-semibold">${Math.round(f.cal)} kcal</span>
+              <span class="text-[10px] text-gray-300">·</span>
+              <span class="text-[10px] text-blue-500 font-medium">P:${f.protein}g</span>
+              <span class="text-[10px] text-orange-500 font-medium">C:${f.carbs}g</span>
+              <span class="text-[10px] text-red-400 font-medium">F:${f.fats}g</span>
+              ${f.time ? `<span class="text-[10px] text-gray-300 ml-1">${f.time}</span>` : ''}
+            </div>
+          </div>
+          <button onclick="deleteFood(${f.id})" class="ml-3 opacity-0 group-hover:opacity-100 transition w-7 h-7 flex items-center justify-center rounded-lg hover:bg-red-50 text-red-400 hover:text-red-500 flex-shrink-0" title="ลบ">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+          </button>
+        </div>
+      `).join('');
+    }
+  });
+}
+
+// ========== TOAST ==========
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  document.getElementById('toastMsg').textContent = msg;
+  t.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-4');
+  t.classList.add('opacity-100', 'translate-y-0');
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(() => {
+    t.classList.add('opacity-0', 'pointer-events-none', 'translate-y-4');
+    t.classList.remove('opacity-100', 'translate-y-0');
+  }, 2200);
+}
+
+// ========== START ==========
+init();
+</script>
+</body>
+</html>

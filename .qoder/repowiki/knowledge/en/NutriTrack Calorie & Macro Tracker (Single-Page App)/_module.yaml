@@ -1,0 +1,8 @@
+schema_version: 1
+module_path: ""
+title: NutriTrack Calorie & Macro Tracker (Single-Page App)
+scope:
+    - index.html
+source_files: []
+depends_on: []
+related_to: []

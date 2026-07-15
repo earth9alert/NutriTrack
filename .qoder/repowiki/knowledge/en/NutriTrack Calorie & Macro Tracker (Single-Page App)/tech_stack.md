@@ -1,0 +1,1 @@
+Vanilla HTML5 + CSS3 + ES6 JavaScript with Tailwind CSS v3 loaded at runtime from `cdn.tailwindcss.com`; Google Fonts (Noto Sans Thai); SVG `stroke-dashoffset` used as a zero-dependency circular progress indicator; `localStorage` as the sole persistence layer.

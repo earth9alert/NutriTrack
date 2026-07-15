@@ -1,0 +1,4 @@
+- State mutations go through a small set of pure helpers (`addFood`, `deleteFood`, `resetAll`) that always end with `save()` followed by `renderAll()`, keeping UI re-render centralized.
+- DOM nodes are addressed exclusively by `document.getElementById(...)` using stable camelCase IDs (e.g. `proteinBar`, `calConsumed`, `breakfastList`) rather than class selectors or query chains.
+- Per-meal list rendering uses a shared loop over `['breakfast','lunch','dinner','snack']` with template literals interpolated into `innerHTML`, instead of per-meal render functions.
+- User-facing strings are localized to Thai and stored in constants (`MEALS`, `GOALS`) or directly inside template literals, never fetched from an i18n system.

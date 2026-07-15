@@ -1,0 +1,1 @@
+A single-file Thai-language calorie and macronutrient tracker that lets users log meals, track daily goals via a ring chart and macro bars, and persists data in localStorage.
