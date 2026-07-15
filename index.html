@@ -2,7 +2,7 @@
 <html lang="th">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <title>NutriTrack - บันทึกสารอาหารเพื่อลดน้ำหนัก</title>
   <meta name="theme-color" content="#059669" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -22,227 +22,271 @@
   </script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700&display=swap');
-    body { font-family: 'Noto Sans Thai', sans-serif; }
+    body { font-family: 'Noto Sans Thai', sans-serif; padding-bottom: env(safe-area-inset-bottom); -webkit-tap-highlight-color: transparent; overscroll-behavior-y: contain; }
     .macro-bar { transition: width 0.5s ease; }
-    .meal-card { transition: all 0.2s ease; }
-    .meal-card:hover { transform: translateY(-1px); }
-    .preset-btn { transition: all 0.15s ease; }
-    .preset-btn:hover { transform: scale(1.03); }
-    .preset-btn:active { transform: scale(0.97); }
     .food-item { animation: slideIn 0.25s ease; }
     @keyframes slideIn { from { opacity:0; transform:translateX(-12px); } to { opacity:1; transform:translateX(0); } }
-    .search-dropdown { max-height: 220px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: #a7f3d0 transparent; }
+    .search-dropdown { max-height: 50vh; overflow-y: auto; scrollbar-width: thin; scrollbar-color: #a7f3d0 transparent; }
     .search-dropdown::-webkit-scrollbar { width: 5px; }
     .search-dropdown::-webkit-scrollbar-thumb { background: #a7f3d0; border-radius: 3px; }
-    .search-item { transition: background 0.1s; }
-    .search-item:hover { background: #ecfdf5; }
-    .search-item.active { background: #d1fae5; }
-    .fav-btn { transition: all 0.15s ease; }
-    .fav-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(16,185,129,0.15); }
-    .fav-btn:active { transform: translateY(0); }
+    .search-item { transition: background 0.1s; -webkit-tap-highlight-color: rgba(16,185,129,0.15); }
+    .search-item:active { background: #d1fae5; }
+    .fav-btn:active { transform: scale(0.95); }
+    .preset-btn:active { transform: scale(0.95); }
     .sync-dot { width:8px; height:8px; border-radius:50%; display:inline-block; }
-    .sync-dot.online { background:#10b981; }
+    .sync-dot.online { background:#10b981; animation: pulse-dot 2s infinite; }
     .sync-dot.offline { background:#f59e0b; }
     .sync-dot.error { background:#ef4444; }
-    .modal-overlay { background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); }
+    @keyframes pulse-dot { 0%,100% { opacity:1; } 50% { opacity:0.5; } }
+    .modal-overlay { background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); }
+    .tab-btn { transition: all 0.15s ease; }
+    .tab-btn.active { color: #059669; }
+    .tab-btn.active .tab-icon { transform: scale(1.1); }
+    .page { display: none; }
+    .page.active { display: block; }
+    .fab { box-shadow: 0 4px 20px rgba(5,150,105,0.4); }
+    .fab:active { transform: scale(0.92); }
+    .bottom-sheet { transition: transform 0.3s ease; }
+    .touch-btn { min-height: 44px; min-width: 44px; }
+    @supports (padding-bottom: env(safe-area-inset-bottom)) {
+      .bottom-nav { padding-bottom: env(safe-area-inset-bottom); }
+    }
     ::-webkit-scrollbar { width: 6px; }
     ::-webkit-scrollbar-thumb { background: #a7f3d0; border-radius: 3px; }
   </style>
 </head>
-<body class="bg-gradient-to-br from-brand-50 via-white to-gray-50 min-h-screen">
+<body class="bg-gradient-to-br from-brand-50 via-white to-gray-50 min-h-screen pb-20">
 
   <!-- Header -->
-  <header class="bg-white/80 backdrop-blur-md border-b border-brand-100 sticky top-0 z-50">
-    <div class="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
-      <div class="flex items-center gap-2">
+  <header class="bg-white/90 backdrop-blur-md border-b border-brand-100 sticky top-0 z-40" style="padding-top: env(safe-area-inset-top);">
+    <div class="max-w-lg mx-auto px-4 py-2.5 flex items-center justify-between">
+      <div class="flex items-center gap-2.5">
         <div class="w-9 h-9 bg-gradient-to-br from-brand-400 to-brand-600 rounded-xl flex items-center justify-center shadow-md">
           <span class="text-white text-lg">🥗</span>
         </div>
         <div>
-          <h1 class="text-lg font-bold text-brand-800 leading-tight">NutriTrack</h1>
-          <div class="flex items-center gap-1.5">
+          <h1 class="text-base font-bold text-brand-800 leading-tight">NutriTrack</h1>
+          <div class="flex items-center gap-1">
             <span class="sync-dot offline" id="syncDot"></span>
-            <span class="text-[10px] text-gray-400" id="syncStatus">localStorage</span>
+            <span class="text-[9px] text-gray-400" id="syncStatus">localStorage</span>
           </div>
         </div>
       </div>
-      <div class="flex items-center gap-2">
-        <button onclick="openSettings()" class="w-8 h-8 rounded-lg bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition" title="ตั้งค่า">
-          <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+      <div class="flex items-center gap-1.5">
+        <span class="text-[10px] text-gray-400" id="currentDate"></span>
+        <button onclick="openSettings()" class="touch-btn w-10 h-10 rounded-xl bg-gray-100 active:bg-gray-200 flex items-center justify-center" title="ตั้งค่า">
+          <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
         </button>
-        <button id="installBtn" onclick="installPWA()" class="hidden w-8 h-8 rounded-lg bg-brand-100 hover:bg-brand-200 flex items-center justify-center transition" title="ติดตั้งแอป">
-          <svg class="w-4 h-4 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+        <button id="installBtn" onclick="installPWA()" class="hidden touch-btn w-10 h-10 rounded-xl bg-brand-100 active:bg-brand-200 flex items-center justify-center" title="ติดตั้ง">
+          <svg class="w-5 h-5 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
         </button>
-        <div class="text-right">
-          <p class="text-[10px] text-gray-400" id="currentDate"></p>
-          <button onclick="resetAll()" class="text-[10px] text-red-400 hover:text-red-600 transition">รีเซ็ต</button>
-        </div>
       </div>
     </div>
   </header>
 
-  <main class="max-w-4xl mx-auto px-4 py-6 space-y-6">
+  <!-- ===== PAGE: Dashboard ===== -->
+  <div class="page active" id="pageDashboard">
+    <div class="max-w-lg mx-auto px-4 py-4 space-y-4">
 
-    <!-- ===== DASHBOARD ===== -->
-    <section class="grid grid-cols-1 md:grid-cols-2 gap-5">
-      <div class="bg-white rounded-2xl shadow-sm border border-brand-100 p-6 flex flex-col items-center">
-        <h2 class="text-sm font-semibold text-gray-500 mb-4 tracking-wide uppercase">แคลอรีวันนี้</h2>
-        <div class="relative w-44 h-44">
-          <svg class="w-full h-full -rotate-90" viewBox="0 0 160 160">
-            <circle cx="80" cy="80" r="70" fill="none" stroke="#e5e7eb" stroke-width="12" />
-            <circle id="calProgressCircle" cx="80" cy="80" r="70" fill="none" stroke="url(#calGrad)" stroke-width="12" stroke-linecap="round" style="stroke-dasharray:440;stroke-dashoffset:440;transition:stroke-dashoffset 0.6s ease" />
-            <defs><linearGradient id="calGrad" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#34d399" /><stop offset="100%" stop-color="#059669" /></linearGradient></defs>
-          </svg>
-          <div class="absolute inset-0 flex flex-col items-center justify-center">
-            <span class="text-3xl font-bold text-brand-700" id="calConsumed">0</span>
-            <span class="text-xs text-gray-400">kcal</span>
-            <span class="text-[10px] text-gray-300 mt-1">จาก 1,800</span>
-          </div>
-        </div>
-        <div class="flex justify-between w-full mt-5 text-center">
-          <div class="flex-1"><p class="text-xs text-gray-400">กินไปแล้ว</p><p class="text-lg font-bold text-brand-600" id="calEaten">0</p></div>
-          <div class="w-px bg-gray-100"></div>
-          <div class="flex-1"><p class="text-xs text-gray-400">เหลืออีก</p><p class="text-lg font-bold text-amber-500" id="calRemaining">1,800</p></div>
-          <div class="w-px bg-gray-100"></div>
-          <div class="flex-1"><p class="text-xs text-gray-400">เกินเป้า</p><p class="text-lg font-bold text-gray-300" id="calOver">0</p></div>
-        </div>
-      </div>
-
-      <div class="bg-white rounded-2xl shadow-sm border border-brand-100 p-6">
-        <h2 class="text-sm font-semibold text-gray-500 mb-5 tracking-wide uppercase">สารอาหารหลัก (Macros)</h2>
-        <div class="space-y-5">
-          <div>
-            <div class="flex justify-between items-end mb-1.5">
-              <div class="flex items-center gap-2"><span class="w-7 h-7 rounded-lg bg-blue-100 flex items-center justify-center text-sm">🥩</span><span class="text-sm font-medium text-gray-700">โปรตีน</span></div>
-              <span class="text-sm text-gray-500"><span id="proteinVal" class="font-semibold text-blue-600">0</span> / 120g</span>
+      <!-- Calorie + Macros compact card -->
+      <div class="bg-white rounded-2xl shadow-sm border border-brand-100 p-4">
+        <div class="flex items-center gap-4">
+          <!-- Compact Ring -->
+          <div class="relative w-28 h-28 flex-shrink-0">
+            <svg class="w-full h-full -rotate-90" viewBox="0 0 160 160">
+              <circle cx="80" cy="80" r="70" fill="none" stroke="#e5e7eb" stroke-width="14" />
+              <circle id="calProgressCircle" cx="80" cy="80" r="70" fill="none" stroke="url(#calGrad)" stroke-width="14" stroke-linecap="round" style="stroke-dasharray:440;stroke-dashoffset:440;transition:stroke-dashoffset 0.6s ease" />
+              <defs><linearGradient id="calGrad" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#34d399" /><stop offset="100%" stop-color="#059669" /></linearGradient></defs>
+            </svg>
+            <div class="absolute inset-0 flex flex-col items-center justify-center">
+              <span class="text-2xl font-bold text-brand-700" id="calConsumed">0</span>
+              <span class="text-[9px] text-gray-400">/ 1,800 kcal</span>
             </div>
-            <div class="w-full h-3 bg-gray-100 rounded-full overflow-hidden"><div class="macro-bar h-full bg-gradient-to-r from-blue-400 to-blue-600 rounded-full" id="proteinBar" style="width:0%"></div></div>
           </div>
-          <div>
-            <div class="flex justify-between items-end mb-1.5">
-              <div class="flex items-center gap-2"><span class="w-7 h-7 rounded-lg bg-orange-100 flex items-center justify-center text-sm">🍚</span><span class="text-sm font-medium text-gray-700">คาร์โบไฮเดรต</span></div>
-              <span class="text-sm text-gray-500"><span id="carbsVal" class="font-semibold text-orange-600">0</span> / 150g</span>
-            </div>
-            <div class="w-full h-3 bg-gray-100 rounded-full overflow-hidden"><div class="macro-bar h-full bg-gradient-to-r from-orange-400 to-orange-600 rounded-full" id="carbsBar" style="width:0%"></div></div>
+          <!-- Summary stats -->
+          <div class="flex-1 space-y-2">
+            <div class="flex justify-between items-center"><span class="text-xs text-gray-500">กินไปแล้ว</span><span class="text-sm font-bold text-brand-600" id="calEaten">0</span></div>
+            <div class="w-full h-px bg-gray-100"></div>
+            <div class="flex justify-between items-center"><span class="text-xs text-gray-500">เหลืออีก</span><span class="text-sm font-bold text-amber-500" id="calRemaining">1,800</span></div>
+            <div class="w-full h-px bg-gray-100"></div>
+            <div class="flex justify-between items-center"><span class="text-xs text-gray-500">เกินเป้า</span><span class="text-sm font-bold text-gray-300" id="calOver">0</span></div>
           </div>
-          <div>
-            <div class="flex justify-between items-end mb-1.5">
-              <div class="flex items-center gap-2"><span class="w-7 h-7 rounded-lg bg-red-100 flex items-center justify-center text-sm">🧈</span><span class="text-sm font-medium text-gray-700">ไขมัน</span></div>
-              <span class="text-sm text-gray-500"><span id="fatsVal" class="font-semibold text-red-500">0</span> / 50g</span>
-            </div>
-            <div class="w-full h-3 bg-gray-100 rounded-full overflow-hidden"><div class="macro-bar h-full bg-gradient-to-r from-red-400 to-red-500 rounded-full" id="fatsBar" style="width:0%"></div></div>
-          </div>
-        </div>
-        <div class="mt-6 flex flex-wrap gap-2">
-          <span class="text-[10px] px-2.5 py-1 rounded-full bg-blue-50 text-blue-600 border border-blue-100" id="proteinStatus">โปรตีน: 0%</span>
-          <span class="text-[10px] px-2.5 py-1 rounded-full bg-orange-50 text-orange-600 border border-orange-100" id="carbsStatus">คาร์บ: 0%</span>
-          <span class="text-[10px] px-2.5 py-1 rounded-full bg-red-50 text-red-500 border border-red-100" id="fatsStatus">ไขมัน: 0%</span>
         </div>
       </div>
-    </section>
 
-    <!-- ===== 7-DAY STATISTICS ===== -->
-    <section class="bg-white rounded-2xl shadow-sm border border-brand-100 p-5">
-      <div class="flex items-center justify-between mb-4">
-        <h2 class="text-sm font-semibold text-gray-500 tracking-wide uppercase">📊 สถิติ 7 วันย้อนหลัง</h2>
-        <span class="text-[10px] text-gray-400" id="chartAvg"></span>
-      </div>
-      <div class="relative" style="height:220px"><canvas id="weeklyChart"></canvas></div>
-    </section>
-
-    <!-- ===== SMART SEARCH ===== -->
-    <section class="bg-white rounded-2xl shadow-sm border border-brand-100 p-5">
-      <h2 class="text-sm font-semibold text-gray-500 mb-4 tracking-wide uppercase">🔍 ค้นหาและเพิ่มอาหาร</h2>
-      <div class="relative mb-4">
-        <div class="relative">
-          <svg class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-          <input type="text" id="searchInput" placeholder="พิมพ์ชื่ออาหารเพื่อค้นหา... เช่น ข้าว, ไก่, ไข่" autocomplete="off" class="w-full border border-gray-200 rounded-xl pl-10 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-300 focus:border-brand-300 transition bg-gray-50/50" />
-          <button id="searchClear" onclick="clearSearch()" class="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-gray-200 hover:bg-gray-300 flex items-center justify-center text-gray-500 text-xs hidden transition">✕</button>
+      <!-- Macros -->
+      <div class="bg-white rounded-2xl shadow-sm border border-brand-100 p-4 space-y-3">
+        <h2 class="text-xs font-semibold text-gray-400 tracking-wide">สารอาหารหลัก</h2>
+        <div>
+          <div class="flex justify-between items-center mb-1">
+            <div class="flex items-center gap-1.5"><span class="w-5 h-5 rounded bg-blue-100 flex items-center justify-center text-[10px]">🥩</span><span class="text-xs font-medium text-gray-600">โปรตีน</span></div>
+            <span class="text-xs text-gray-500"><span id="proteinVal" class="font-semibold text-blue-600">0</span>/120g</span>
+          </div>
+          <div class="w-full h-2.5 bg-gray-100 rounded-full overflow-hidden"><div class="macro-bar h-full bg-gradient-to-r from-blue-400 to-blue-600 rounded-full" id="proteinBar" style="width:0%"></div></div>
         </div>
-        <div id="searchDropdown" class="hidden absolute z-40 w-full mt-1 bg-white border border-brand-100 rounded-xl shadow-lg overflow-hidden search-dropdown"></div>
+        <div>
+          <div class="flex justify-between items-center mb-1">
+            <div class="flex items-center gap-1.5"><span class="w-5 h-5 rounded bg-orange-100 flex items-center justify-center text-[10px]">🍚</span><span class="text-xs font-medium text-gray-600">คาร์โบไฮเดรต</span></div>
+            <span class="text-xs text-gray-500"><span id="carbsVal" class="font-semibold text-orange-600">0</span>/150g</span>
+          </div>
+          <div class="w-full h-2.5 bg-gray-100 rounded-full overflow-hidden"><div class="macro-bar h-full bg-gradient-to-r from-orange-400 to-orange-600 rounded-full" id="carbsBar" style="width:0%"></div></div>
+        </div>
+        <div>
+          <div class="flex justify-between items-center mb-1">
+            <div class="flex items-center gap-1.5"><span class="w-5 h-5 rounded bg-red-100 flex items-center justify-center text-[10px]">🧈</span><span class="text-xs font-medium text-gray-600">ไขมัน</span></div>
+            <span class="text-xs text-gray-500"><span id="fatsVal" class="font-semibold text-red-500">0</span>/50g</span>
+          </div>
+          <div class="w-full h-2.5 bg-gray-100 rounded-full overflow-hidden"><div class="macro-bar h-full bg-gradient-to-r from-red-400 to-red-500 rounded-full" id="fatsBar" style="width:0%"></div></div>
+        </div>
+        <div class="flex gap-1.5 pt-1">
+          <span class="text-[9px] px-2 py-0.5 rounded-full bg-blue-50 text-blue-600" id="proteinStatus">0%</span>
+          <span class="text-[9px] px-2 py-0.5 rounded-full bg-orange-50 text-orange-600" id="carbsStatus">0%</span>
+          <span class="text-[9px] px-2 py-0.5 rounded-full bg-red-50 text-red-500" id="fatsStatus">0%</span>
+        </div>
       </div>
-      <div class="mb-4">
-        <div class="flex items-center justify-between mb-2">
-          <p class="text-xs font-medium text-gray-500">⭐ เมนูที่กินบ่อย</p>
-          <select id="favMealSelect" class="text-[11px] border border-brand-200 rounded-lg px-2 py-1 bg-brand-50 text-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-300">
-            <option value="breakfast">🌅 มื้อเช้า</option><option value="lunch" selected>☀️ มื้อกลางวัน</option><option value="dinner">🌙 มื้อเย็น</option><option value="snack">🍪 ของว่าง</option>
+
+      <!-- Quick Add Buttons -->
+      <div class="bg-white rounded-2xl shadow-sm border border-brand-100 p-4">
+        <div class="flex items-center justify-between mb-2.5">
+          <h2 class="text-xs font-semibold text-gray-400 tracking-wide">⭐ เพิ่มด่วน</h2>
+          <select id="favMealSelect" class="text-[11px] border border-brand-200 rounded-lg px-2 py-1.5 bg-brand-50 text-brand-700 focus:outline-none touch-btn">
+            <option value="breakfast">🌅 เช้า</option><option value="lunch" selected>☀️ กลางวัน</option><option value="dinner">🌙 เย็น</option><option value="snack">🍪 ว่าง</option>
           </select>
         </div>
-        <div class="grid grid-cols-2 sm:grid-cols-5 gap-2" id="favButtons"></div>
+        <div class="grid grid-cols-5 gap-1.5" id="favButtons"></div>
       </div>
-    </section>
 
-    <!-- ===== PRESET QUICK-ADD ===== -->
-    <section class="bg-white rounded-2xl shadow-sm border border-brand-100 p-5">
-      <h2 class="text-sm font-semibold text-gray-500 mb-3 tracking-wide uppercase">🍽️ อาหารแนะนำด่วน</h2>
-      <div class="flex items-center gap-2 mb-3">
-        <label class="text-xs text-gray-500">เพิ่มเข้ามื้อ:</label>
-        <select id="presetMealSelect" class="text-xs border border-brand-200 rounded-lg px-2.5 py-1.5 bg-brand-50 text-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-300">
-          <option value="breakfast">🌅 มื้อเช้า</option><option value="lunch">☀️ มื้อกลางวัน</option><option value="dinner">🌙 มื้อเย็น</option><option value="snack">🍪 ของว่าง</option>
-        </select>
-      </div>
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2" id="presetButtons"></div>
-    </section>
-
-    <!-- ===== QUICK ADD FORM ===== -->
-    <section class="bg-white rounded-2xl shadow-sm border border-brand-100 p-5">
-      <h2 class="text-sm font-semibold text-gray-500 mb-4 tracking-wide uppercase">📝 เพิ่มรายการอาหารแบบกำหนดเอง</h2>
-      <form id="foodForm" class="space-y-3">
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div class="sm:col-span-2"><label class="text-xs text-gray-500 mb-1 block">ชื่ออาหาร</label><input type="text" id="foodName" required placeholder="เช่น ข้าวผัดกระเพราหมู" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-300 transition" /></div>
-          <div><label class="text-xs text-gray-500 mb-1 block">แคลอรี (kcal)</label><input type="number" id="foodCal" required min="0" placeholder="0" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-300 transition" /></div>
-          <div><label class="text-xs text-gray-500 mb-1 block">มื้ออาหาร</label><select id="foodMeal" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-300 transition bg-white"><option value="breakfast">🌅 มื้อเช้า</option><option value="lunch">☀️ มื้อกลางวัน</option><option value="dinner">🌙 มื้อเย็น</option><option value="snack">🍪 ของว่าง</option></select></div>
-          <div><label class="text-xs text-gray-500 mb-1 block">โปรตีน (g)</label><input type="number" id="foodProtein" required min="0" step="0.1" placeholder="0" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-300 transition" /></div>
-          <div><label class="text-xs text-gray-500 mb-1 block">คาร์โบไฮเดรต (g)</label><input type="number" id="foodCarbs" required min="0" step="0.1" placeholder="0" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-300 transition" /></div>
-          <div><label class="text-xs text-gray-500 mb-1 block">ไขมัน (g)</label><input type="number" id="foodFats" required min="0" step="0.1" placeholder="0" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-300 transition" /></div>
+      <!-- Food Diary - Today -->
+      <div class="space-y-3">
+        <h2 class="text-xs font-semibold text-gray-400 tracking-wide px-1">📖 บันทึกวันนี้</h2>
+        <div class="bg-white rounded-2xl shadow-sm border border-brand-100 overflow-hidden">
+          <div class="bg-gradient-to-r from-orange-50 to-amber-50 px-4 py-2.5 flex items-center justify-between border-b border-orange-100"><div class="flex items-center gap-1.5"><span>🌅</span><span class="font-semibold text-gray-700 text-xs">มื้อเช้า</span></div><span class="text-[11px] font-medium text-orange-600 bg-orange-100 px-2 py-0.5 rounded-full" id="breakfastTotal">0 kcal</span></div>
+          <div class="divide-y divide-gray-50" id="breakfastList"><div class="px-4 py-5 text-center text-xs text-gray-300">ยังไม่มีรายการ</div></div>
         </div>
-        <button type="submit" class="w-full bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-700 text-white font-semibold py-3 rounded-xl shadow-md shadow-brand-200 transition-all active:scale-[0.98] text-sm">📝 บันทึกอาหาร</button>
-      </form>
-    </section>
+        <div class="bg-white rounded-2xl shadow-sm border border-brand-100 overflow-hidden">
+          <div class="bg-gradient-to-r from-yellow-50 to-lime-50 px-4 py-2.5 flex items-center justify-between border-b border-yellow-100"><div class="flex items-center gap-1.5"><span>☀️</span><span class="font-semibold text-gray-700 text-xs">มื้อกลางวัน</span></div><span class="text-[11px] font-medium text-yellow-600 bg-yellow-100 px-2 py-0.5 rounded-full" id="lunchTotal">0 kcal</span></div>
+          <div class="divide-y divide-gray-50" id="lunchList"><div class="px-4 py-5 text-center text-xs text-gray-300">ยังไม่มีรายการ</div></div>
+        </div>
+        <div class="bg-white rounded-2xl shadow-sm border border-brand-100 overflow-hidden">
+          <div class="bg-gradient-to-r from-indigo-50 to-purple-50 px-4 py-2.5 flex items-center justify-between border-b border-indigo-100"><div class="flex items-center gap-1.5"><span>🌙</span><span class="font-semibold text-gray-700 text-xs">มื้อเย็น</span></div><span class="text-[11px] font-medium text-indigo-600 bg-indigo-100 px-2 py-0.5 rounded-full" id="dinnerTotal">0 kcal</span></div>
+          <div class="divide-y divide-gray-50" id="dinnerList"><div class="px-4 py-5 text-center text-xs text-gray-300">ยังไม่มีรายการ</div></div>
+        </div>
+        <div class="bg-white rounded-2xl shadow-sm border border-brand-100 overflow-hidden">
+          <div class="bg-gradient-to-r from-pink-50 to-rose-50 px-4 py-2.5 flex items-center justify-between border-b border-pink-100"><div class="flex items-center gap-1.5"><span>🍪</span><span class="font-semibold text-gray-700 text-xs">ของว่าง</span></div><span class="text-[11px] font-medium text-pink-600 bg-pink-100 px-2 py-0.5 rounded-full" id="snackTotal">0 kcal</span></div>
+          <div class="divide-y divide-gray-50" id="snackList"><div class="px-4 py-5 text-center text-xs text-gray-300">ยังไม่มีรายการ</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
 
-    <!-- ===== FOOD DIARY ===== -->
-    <section class="space-y-4" id="diarySection">
-      <h2 class="text-sm font-semibold text-gray-500 tracking-wide uppercase px-1">📖 บันทึกอาหารวันนี้</h2>
-      <div class="bg-white rounded-2xl shadow-sm border border-brand-100 overflow-hidden meal-card">
-        <div class="bg-gradient-to-r from-orange-50 to-amber-50 px-5 py-3 flex items-center justify-between border-b border-orange-100"><div class="flex items-center gap-2"><span class="text-lg">🌅</span><h3 class="font-semibold text-gray-700 text-sm">มื้อเช้า</h3></div><span class="text-xs font-medium text-orange-600 bg-orange-100 px-2.5 py-0.5 rounded-full" id="breakfastTotal">0 kcal</span></div>
-        <div class="divide-y divide-gray-50" id="breakfastList"><div class="px-5 py-6 text-center text-xs text-gray-300">ยังไม่มีรายการอาหาร</div></div>
-      </div>
-      <div class="bg-white rounded-2xl shadow-sm border border-brand-100 overflow-hidden meal-card">
-        <div class="bg-gradient-to-r from-yellow-50 to-lime-50 px-5 py-3 flex items-center justify-between border-b border-yellow-100"><div class="flex items-center gap-2"><span class="text-lg">☀️</span><h3 class="font-semibold text-gray-700 text-sm">มื้อกลางวัน</h3></div><span class="text-xs font-medium text-yellow-600 bg-yellow-100 px-2.5 py-0.5 rounded-full" id="lunchTotal">0 kcal</span></div>
-        <div class="divide-y divide-gray-50" id="lunchList"><div class="px-5 py-6 text-center text-xs text-gray-300">ยังไม่มีรายการอาหาร</div></div>
-      </div>
-      <div class="bg-white rounded-2xl shadow-sm border border-brand-100 overflow-hidden meal-card">
-        <div class="bg-gradient-to-r from-indigo-50 to-purple-50 px-5 py-3 flex items-center justify-between border-b border-indigo-100"><div class="flex items-center gap-2"><span class="text-lg">🌙</span><h3 class="font-semibold text-gray-700 text-sm">มื้อเย็น</h3></div><span class="text-xs font-medium text-indigo-600 bg-indigo-100 px-2.5 py-0.5 rounded-full" id="dinnerTotal">0 kcal</span></div>
-        <div class="divide-y divide-gray-50" id="dinnerList"><div class="px-5 py-6 text-center text-xs text-gray-300">ยังไม่มีรายการอาหาร</div></div>
-      </div>
-      <div class="bg-white rounded-2xl shadow-sm border border-brand-100 overflow-hidden meal-card">
-        <div class="bg-gradient-to-r from-pink-50 to-rose-50 px-5 py-3 flex items-center justify-between border-b border-pink-100"><div class="flex items-center gap-2"><span class="text-lg">🍪</span><h3 class="font-semibold text-gray-700 text-sm">ของว่าง</h3></div><span class="text-xs font-medium text-pink-600 bg-pink-100 px-2.5 py-0.5 rounded-full" id="snackTotal">0 kcal</span></div>
-        <div class="divide-y divide-gray-50" id="snackList"><div class="px-5 py-6 text-center text-xs text-gray-300">ยังไม่มีรายการอาหาร</div></div>
-      </div>
-    </section>
+  <!-- ===== PAGE: Add Food ===== -->
+  <div class="page" id="pageAdd">
+    <div class="max-w-lg mx-auto px-4 py-4 space-y-4">
 
-    <footer class="text-center py-6"><p class="text-[10px] text-gray-300">NutriTrack v3.0 · สร้างด้วย ❤️ เพื่อสุขภาพที่ดี</p></footer>
-  </main>
+      <!-- Search -->
+      <div class="bg-white rounded-2xl shadow-sm border border-brand-100 p-4">
+        <h2 class="text-xs font-semibold text-gray-400 tracking-wide mb-3">🔍 ค้นหาอาหาร</h2>
+        <div class="relative">
+          <div class="relative">
+            <svg class="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            <input type="text" id="searchInput" placeholder="พิมพ์ชื่ออาหาร... เช่น ข้าว, ไก่" autocomplete="off" class="w-full border border-gray-200 rounded-xl pl-11 pr-10 py-3.5 text-base focus:outline-none focus:ring-2 focus:ring-brand-300 transition bg-gray-50/50" />
+            <button id="searchClear" onclick="clearSearch()" class="absolute right-3 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-gray-200 active:bg-gray-300 flex items-center justify-center text-gray-500 text-sm hidden">✕</button>
+          </div>
+          <div id="searchDropdown" class="hidden absolute z-40 w-full mt-1 bg-white border border-brand-100 rounded-xl shadow-lg overflow-hidden search-dropdown"></div>
+        </div>
+      </div>
+
+      <!-- Presets -->
+      <div class="bg-white rounded-2xl shadow-sm border border-brand-100 p-4">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-xs font-semibold text-gray-400 tracking-wide">🍽️ อาหารแนะนำ</h2>
+          <select id="presetMealSelect" class="text-[11px] border border-brand-200 rounded-lg px-2 py-1.5 bg-brand-50 text-brand-700 focus:outline-none touch-btn">
+            <option value="breakfast">🌅 เช้า</option><option value="lunch">☀️ กลางวัน</option><option value="dinner">🌙 เย็น</option><option value="snack">🍪 ว่าง</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-2 gap-2" id="presetButtons"></div>
+      </div>
+
+      <!-- Manual Form -->
+      <div class="bg-white rounded-2xl shadow-sm border border-brand-100 p-4">
+        <h2 class="text-xs font-semibold text-gray-400 tracking-wide mb-3">📝 กำหนดเอง</h2>
+        <form id="foodForm" class="space-y-3">
+          <div><input type="text" id="foodName" required placeholder="ชื่ออาหาร" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-brand-300" /></div>
+          <div class="grid grid-cols-2 gap-2">
+            <div><label class="text-[10px] text-gray-400 mb-0.5 block">แคลอรี</label><input type="number" id="foodCal" required min="0" placeholder="0" class="w-full border border-gray-200 rounded-xl px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-brand-300" /></div>
+            <div><label class="text-[10px] text-gray-400 mb-0.5 block">มื้อ</label><select id="foodMeal" class="w-full border border-gray-200 rounded-xl px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-brand-300 bg-white"><option value="breakfast">🌅 เช้า</option><option value="lunch">☀️ กลางวัน</option><option value="dinner">🌙 เย็น</option><option value="snack">🍪 ว่าง</option></select></div>
+            <div><label class="text-[10px] text-gray-400 mb-0.5 block">โปรตีน (g)</label><input type="number" id="foodProtein" required min="0" step="0.1" placeholder="0" class="w-full border border-gray-200 rounded-xl px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-brand-300" /></div>
+            <div><label class="text-[10px] text-gray-400 mb-0.5 block">คาร์บ (g)</label><input type="number" id="foodCarbs" required min="0" step="0.1" placeholder="0" class="w-full border border-gray-200 rounded-xl px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-brand-300" /></div>
+          </div>
+          <div><label class="text-[10px] text-gray-400 mb-0.5 block">ไขมัน (g)</label><input type="number" id="foodFats" required min="0" step="0.1" placeholder="0" class="w-full border border-gray-200 rounded-xl px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-brand-300" /></div>
+          <button type="submit" class="w-full bg-gradient-to-r from-brand-500 to-brand-600 active:from-brand-700 active:to-brand-800 text-white font-semibold py-3.5 rounded-xl shadow-md shadow-brand-200 text-base">📝 บันทึกอาหาร</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== PAGE: Stats ===== -->
+  <div class="page" id="pageStats">
+    <div class="max-w-lg mx-auto px-4 py-4 space-y-4">
+      <div class="bg-white rounded-2xl shadow-sm border border-brand-100 p-4">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-xs font-semibold text-gray-400 tracking-wide">📊 สถิติ 7 วัน</h2>
+          <span class="text-[10px] text-gray-400" id="chartAvg"></span>
+        </div>
+        <div class="relative" style="height:200px"><canvas id="weeklyChart"></canvas></div>
+      </div>
+      <div class="bg-white rounded-2xl shadow-sm border border-brand-100 p-4">
+        <h2 class="text-xs font-semibold text-gray-400 tracking-wide mb-3">📈 สรุปวันนี้</h2>
+        <div class="grid grid-cols-3 gap-3 text-center">
+          <div class="bg-brand-50 rounded-xl p-3"><p class="text-lg font-bold text-brand-700" id="summaryCal">0</p><p class="text-[10px] text-gray-500">kcal</p></div>
+          <div class="bg-blue-50 rounded-xl p-3"><p class="text-lg font-bold text-blue-600" id="summaryItems">0</p><p class="text-[10px] text-gray-500">รายการ</p></div>
+          <div class="bg-amber-50 rounded-xl p-3"><p class="text-lg font-bold text-amber-600" id="summaryMeals">0</p><p class="text-[10px] text-gray-500">มื้อ</p></div>
+        </div>
+      </div>
+      <button onclick="resetAll()" class="w-full border border-red-200 text-red-400 active:bg-red-50 font-medium py-3 rounded-xl text-sm">🗑️ ล้างข้อมูลทั้งหมด</button>
+    </div>
+  </div>
+
+  <!-- FAB - Quick Add -->
+  <button onclick="switchTab('pageAdd')" id="fab" class="fab fixed z-30 w-14 h-14 bg-gradient-to-br from-brand-500 to-brand-600 rounded-full flex items-center justify-center text-white text-2xl active:from-brand-700 active:to-brand-800" style="bottom: calc(72px + env(safe-area-inset-bottom)); right: 20px;">+</button>
+
+  <!-- Bottom Navigation -->
+  <nav class="bottom-nav fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-gray-200" style="padding-bottom: env(safe-area-inset-bottom);">
+    <div class="max-w-lg mx-auto flex">
+      <button onclick="switchTab('pageDashboard')" class="tab-btn active flex-1 flex flex-col items-center py-2 pt-2.5 gap-0.5" data-tab="pageDashboard">
+        <svg class="tab-icon w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+        <span class="text-[10px] font-medium">หน้าแรก</span>
+      </button>
+      <button onclick="switchTab('pageAdd')" class="tab-btn flex-1 flex flex-col items-center py-2 pt-2.5 gap-0.5" data-tab="pageAdd">
+        <svg class="tab-icon w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+        <span class="text-[10px] font-medium">เพิ่มอาหาร</span>
+      </button>
+      <button onclick="switchTab('pageStats')" class="tab-btn flex-1 flex flex-col items-center py-2 pt-2.5 gap-0.5" data-tab="pageStats">
+        <svg class="tab-icon w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+        <span class="text-[10px] font-medium">สถิติ</span>
+      </button>
+    </div>
+  </nav>
 
   <!-- Toast -->
-  <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-brand-700 text-white text-sm px-5 py-2.5 rounded-full shadow-lg opacity-0 pointer-events-none transition-all duration-300 z-50 translate-y-4"><span id="toastMsg"></span></div>
+  <div id="toast" class="fixed bottom-24 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-sm px-5 py-2.5 rounded-full shadow-lg opacity-0 pointer-events-none transition-all duration-300 z-50 translate-y-4"><span id="toastMsg"></span></div>
 
   <!-- Settings Modal -->
-  <div id="settingsModal" class="hidden fixed inset-0 z-[100] flex items-center justify-center p-4">
+  <div id="settingsModal" class="hidden fixed inset-0 z-[100] flex items-end sm:items-center justify-center">
     <div class="modal-overlay absolute inset-0" onclick="closeSettings()"></div>
-    <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 z-10">
-      <div class="flex items-center justify-between mb-5">
-        <h3 class="text-lg font-bold text-gray-800">⚙️ ตั้งค่า Supabase</h3>
-        <button onclick="closeSettings()" class="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center text-gray-400">✕</button>
+    <div class="relative bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl w-full max-w-md p-5 pb-8 z-10 bottom-sheet" style="padding-bottom: calc(2rem + env(safe-area-inset-bottom));">
+      <div class="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-4 sm:hidden"></div>
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-base font-bold text-gray-800">⚙️ ตั้งค่า Supabase</h3>
+        <button onclick="closeSettings()" class="touch-btn w-10 h-10 rounded-xl hover:bg-gray-100 flex items-center justify-center text-gray-400 text-lg">✕</button>
       </div>
-      <p class="text-xs text-gray-500 mb-4">กรอกข้อมูล Supabase Project ของคุณเพื่อบันทึกข้อมูลขึ้นคลาวด์<br/>สร้างโปรเจกต์ฟรีที่ <a href="https://supabase.com" target="_blank" class="text-brand-600 underline">supabase.com</a></p>
-      <div class="space-y-3">
-        <div><label class="text-xs text-gray-500 mb-1 block">Project URL</label><input type="url" id="supaUrl" placeholder="https://xxxxx.supabase.co" class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-300 transition" /></div>
-        <div><label class="text-xs text-gray-500 mb-1 block">Anon Key (Public)</label><input type="password" id="supaKey" placeholder="eyJhbGciOi..." class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-300 transition" /></div>
+      <p class="text-xs text-gray-500 mb-3">กรอกข้อมูล Supabase เพื่อบันทึกข้อมูลขึ้นคลาวด์<br/><a href="https://supabase.com" target="_blank" class="text-brand-600 underline">สมัครฟรีที่ supabase.com</a></p>
+      <div class="space-y-2.5">
+        <div><label class="text-[10px] text-gray-400 mb-0.5 block">Project URL</label><input type="url" id="supaUrl" placeholder="https://xxxxx.supabase.co" class="w-full border border-gray-200 rounded-xl px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-brand-300" /></div>
+        <div><label class="text-[10px] text-gray-400 mb-0.5 block">Anon Key (Public)</label><input type="password" id="supaKey" placeholder="eyJhbGciOi..." class="w-full border border-gray-200 rounded-xl px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-brand-300" /></div>
       </div>
-      <div class="mt-4 p-3 bg-gray-50 rounded-xl">
-        <p class="text-[10px] text-gray-500 font-medium mb-1">📋 SQL สำหรับสร้างตาราง (copy ไปรันใน Supabase SQL Editor):</p>
-        <pre class="text-[9px] text-gray-600 bg-white p-2 rounded-lg border overflow-x-auto whitespace-pre-wrap">CREATE TABLE food_logs (
+      <details class="mt-3"><summary class="text-[10px] text-gray-400 cursor-pointer">📋 ดู SQL สำหรับสร้างตาราง</summary>
+        <pre class="mt-2 text-[9px] text-gray-600 bg-gray-50 p-3 rounded-xl border overflow-x-auto whitespace-pre-wrap">CREATE TABLE food_logs (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   name TEXT NOT NULL,
   calories REAL DEFAULT 0,
@@ -253,391 +297,147 @@
   logged_date DATE DEFAULT CURRENT_DATE,
   logged_time TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW()
-);</pre>
-      </div>
-      <div class="flex gap-2 mt-5">
-        <button onclick="testSupabase()" class="flex-1 border border-brand-300 text-brand-600 font-medium py-2.5 rounded-xl text-sm hover:bg-brand-50 transition">🔗 ทดสอบ</button>
-        <button onclick="saveSupabaseConfig()" class="flex-1 bg-gradient-to-r from-brand-500 to-brand-600 text-white font-medium py-2.5 rounded-xl text-sm hover:from-brand-600 hover:to-brand-700 transition">💾 บันทึก</button>
+);
+
+ALTER TABLE food_logs ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow all" ON food_logs
+  FOR ALL USING (true) WITH CHECK (true);</pre>
+      </details>
+      <div class="flex gap-2 mt-4">
+        <button onclick="testSupabase()" class="flex-1 border border-brand-300 text-brand-600 font-medium py-3 rounded-xl text-sm active:bg-brand-50">🔗 ทดสอบ</button>
+        <button onclick="saveSupabaseConfig()" class="flex-1 bg-gradient-to-r from-brand-500 to-brand-600 text-white font-medium py-3 rounded-xl text-sm active:from-brand-700 active:to-brand-800">💾 บันทึก</button>
       </div>
     </div>
   </div>
 
 <script>
-// ========== CONFIG ==========
-const GOALS = { calories: 1800, protein: 120, carbs: 150, fats: 50 };
-const MEALS = { breakfast: 'มื้อเช้า', lunch: 'มื้อกลางวัน', dinner: 'มื้อเย็น', snack: 'ของว่าง' };
-const TODAY = new Date().toISOString().slice(0, 10);
-
-const FOOD_DB = [
-  { name: 'ข้าวกะเพราไก่ไข่ดาว', cal: 550, p: 28, c: 65, f: 18, emoji: '🍛', meal: 'lunch' },
-  { name: 'ข้าวผัดหมู', cal: 480, p: 18, c: 60, f: 16, emoji: '🍚', meal: 'lunch' },
-  { name: 'ก๋วยเตี๋ยวเส้นเล็กน้ำใส', cal: 320, p: 15, c: 45, f: 8, emoji: '🍜', meal: 'lunch' },
-  { name: 'ส้มตำไทย', cal: 150, p: 5, c: 22, f: 5, emoji: '🥗', meal: 'lunch' },
-  { name: 'อกไก่ต้ม', cal: 165, p: 31, c: 0, f: 4, emoji: '🍗', meal: 'lunch' },
-  { name: 'ไข่เจียว', cal: 180, p: 12, c: 2, f: 14, emoji: '🍳', meal: 'breakfast' },
-  { name: 'ข้าวกล้อง 1 ทัพพี', cal: 120, p: 3, c: 25, f: 1, emoji: '🍚', meal: 'lunch' },
-  { name: 'นมจืด 1 แก้ว', cal: 120, p: 8, c: 12, f: 5, emoji: '🥛', meal: 'breakfast' },
-  { name: 'กาแฟดำ (ไม่ใส่น้ำตาล)', cal: 5, p: 0, c: 1, f: 0, emoji: '☕', meal: 'breakfast' },
-  { name: 'อกไก่นุ่ม', cal: 120, p: 25, c: 0, f: 2, emoji: '🍗', meal: 'lunch' },
-  { name: 'ข้าวมันไก่', cal: 600, p: 20, c: 75, f: 25, emoji: '🍚', meal: 'lunch' },
-  { name: 'ไข่ต้ม 1 ฟอง', cal: 75, p: 7, c: 0, f: 5, emoji: '🥚', meal: 'breakfast' },
-  { name: 'เวย์โปรตีน 1 สกู๊ป', cal: 120, p: 25, c: 3, f: 1, emoji: '🥤', meal: 'snack' },
-  { name: 'ข้าวเหนียวหมูปิ้ง', cal: 400, p: 15, c: 55, f: 14, emoji: '🍖', meal: 'breakfast' },
-  { name: 'ก๋วยเตี๋ยวต้มยำ', cal: 350, p: 15, c: 45, f: 12, emoji: '🍜', meal: 'lunch' },
-  { name: 'กล้วยหอม 1 ลูก', cal: 105, p: 1, c: 27, f: 0, emoji: '🍌', meal: 'snack' },
-  { name: 'ข้าวต้มหมู', cal: 280, p: 12, c: 40, f: 7, emoji: '🥣', meal: 'breakfast' },
-  { name: 'ผัดผักบุ้งไฟแดง', cal: 120, p: 4, c: 10, f: 7, emoji: '🥬', meal: 'dinner' },
-  { name: 'ต้มจืดเต้าหู้หมูสับ', cal: 200, p: 18, c: 8, f: 11, emoji: '🍲', meal: 'dinner' },
-  { name: 'โยเกิร์ตไขมันต่ำ', cal: 90, p: 8, c: 12, f: 1, emoji: '🥛', meal: 'snack' },
+const GOALS={calories:1800,protein:120,carbs:150,fats:50};
+const MEALS={breakfast:'มื้อเช้า',lunch:'มื้อกลางวัน',dinner:'มื้อเย็น',snack:'ของว่าง'};
+const TODAY=new Date().toISOString().slice(0,10);
+const FOOD_DB=[
+  {name:'ข้าวกะเพราไก่ไข่ดาว',cal:550,p:28,c:65,f:18,emoji:'🍛',meal:'lunch'},{name:'ข้าวผัดหมู',cal:480,p:18,c:60,f:16,emoji:'🍚',meal:'lunch'},
+  {name:'ก๋วยเตี๋ยวเส้นเล็กน้ำใส',cal:320,p:15,c:45,f:8,emoji:'🍜',meal:'lunch'},{name:'ส้มตำไทย',cal:150,p:5,c:22,f:5,emoji:'🥗',meal:'lunch'},
+  {name:'อกไก่ต้ม',cal:165,p:31,c:0,f:4,emoji:'🍗',meal:'lunch'},{name:'ไข่เจียว',cal:180,p:12,c:2,f:14,emoji:'🍳',meal:'breakfast'},
+  {name:'ข้าวกล้อง 1 ทัพพี',cal:120,p:3,c:25,f:1,emoji:'🍚',meal:'lunch'},{name:'นมจืด 1 แก้ว',cal:120,p:8,c:12,f:5,emoji:'🥛',meal:'breakfast'},
+  {name:'กาแฟดำ (ไม่ใส่น้ำตาล)',cal:5,p:0,c:1,f:0,emoji:'☕',meal:'breakfast'},{name:'อกไก่นุ่ม',cal:120,p:25,c:0,f:2,emoji:'🍗',meal:'lunch'},
+  {name:'ข้าวมันไก่',cal:600,p:20,c:75,f:25,emoji:'🍚',meal:'lunch'},{name:'ไข่ต้ม 1 ฟอง',cal:75,p:7,c:0,f:5,emoji:'🥚',meal:'breakfast'},
+  {name:'เวย์โปรตีน 1 สกู๊ป',cal:120,p:25,c:3,f:1,emoji:'🥤',meal:'snack'},{name:'ข้าวเหนียวหมูปิ้ง',cal:400,p:15,c:55,f:14,emoji:'🍖',meal:'breakfast'},
+  {name:'ก๋วยเตี๋ยวต้มยำ',cal:350,p:15,c:45,f:12,emoji:'🍜',meal:'lunch'},{name:'กล้วยหอม 1 ลูก',cal:105,p:1,c:27,f:0,emoji:'🍌',meal:'snack'},
+  {name:'ข้าวต้มหมู',cal:280,p:12,c:40,f:7,emoji:'🥣',meal:'breakfast'},{name:'ผัดผักบุ้งไฟแดง',cal:120,p:4,c:10,f:7,emoji:'🥬',meal:'dinner'},
+  {name:'ต้มจืดเต้าหู้หมูสับ',cal:200,p:18,c:8,f:11,emoji:'🍲',meal:'dinner'},{name:'โยเกิร์ตไขมันต่ำ',cal:90,p:8,c:12,f:1,emoji:'🥛',meal:'snack'},
 ];
-const FAVORITES = [
-  { name: 'ไข่ต้ม 1 ฟอง', cal: 75, p: 7, c: 0, f: 5, emoji: '🥚' },
-  { name: 'อกไก่นุ่ม', cal: 120, p: 25, c: 0, f: 2, emoji: '🍗' },
-  { name: 'เวย์โปรตีน 1 สกู๊ป', cal: 120, p: 25, c: 3, f: 1, emoji: '🥤' },
-  { name: 'ข้าวกล้อง 1 ทัพพี', cal: 120, p: 3, c: 25, f: 1, emoji: '🍚' },
-  { name: 'กล้วยหอม 1 ลูก', cal: 105, p: 1, c: 27, f: 0, emoji: '🍌' },
+const FAVORITES=[
+  {name:'ไข่ต้ม 1 ฟอง',cal:75,p:7,c:0,f:5,emoji:'🥚'},{name:'อกไก่นุ่ม',cal:120,p:25,c:0,f:2,emoji:'🍗'},
+  {name:'เวย์โปรตีน 1 สกู๊ป',cal:120,p:25,c:3,f:1,emoji:'🥤'},{name:'ข้าวกล้อง 1 ทัพพี',cal:120,p:3,c:25,f:1,emoji:'🍚'},
+  {name:'กล้วยหอม 1 ลูก',cal:105,p:1,c:27,f:0,emoji:'🍌'},
 ];
-const PRESETS = [
-  { name: 'อกไก่นุ่ม', cal: 120, p: 25, c: 0, f: 2, emoji: '🍗' },
-  { name: 'ข้าวมันไก่', cal: 600, p: 20, c: 75, f: 25, emoji: '🍚' },
-  { name: 'ไข่ต้ม 1 ฟอง', cal: 75, p: 7, c: 0, f: 5, emoji: '🥚' },
-  { name: 'เวย์โปรตีน 1 สกู๊ป', cal: 120, p: 25, c: 3, f: 1, emoji: '🥤' },
-  { name: 'ข้าวเหนียวหมูปิ้ง', cal: 400, p: 15, c: 55, f: 14, emoji: '🍖' },
-  { name: 'ส้มตำ', cal: 150, p: 5, c: 20, f: 6, emoji: '🥗' },
-  { name: 'ก๋วยเตี๋ยวต้มยำ', cal: 350, p: 15, c: 45, f: 12, emoji: '🍜' },
-  { name: 'กล้วยหอม 1 ลูก', cal: 105, p: 1, c: 27, f: 0, emoji: '🍌' },
+const PRESETS=[
+  {name:'อกไก่นุ่ม',cal:120,p:25,c:0,f:2,emoji:'🍗'},{name:'ข้าวมันไก่',cal:600,p:20,c:75,f:25,emoji:'🍚'},
+  {name:'ไข่ต้ม 1 ฟอง',cal:75,p:7,c:0,f:5,emoji:'🥚'},{name:'เวย์โปรตีน 1 สกู๊ป',cal:120,p:25,c:3,f:1,emoji:'🥤'},
+  {name:'ข้าวเหนียวหมูปิ้ง',cal:400,p:15,c:55,f:14,emoji:'🍖'},{name:'ส้มตำ',cal:150,p:5,c:20,f:6,emoji:'🥗'},
+  {name:'ก๋วยเตี๋ยวต้มยำ',cal:350,p:15,c:45,f:12,emoji:'🍜'},{name:'กล้วยหอม 1 ลูก',cal:105,p:1,c:27,f:0,emoji:'🍌'},
 ];
 
-let foodLog = JSON.parse(localStorage.getItem('nutritrack_log') || '[]');
-let searchActiveIndex = -1;
-let weeklyChart = null;
-let supabaseClient = null;
+let foodLog=JSON.parse(localStorage.getItem('nutritrack_log')||'[]');
+let searchActiveIndex=-1, weeklyChart=null, supabaseClient=null;
+
+// ========== TAB NAVIGATION ==========
+function switchTab(pageId) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById(pageId).classList.add('active');
+  document.querySelectorAll('.tab-btn').forEach(b=>{
+    b.classList.toggle('active', b.dataset.tab===pageId);
+    b.classList.toggle('text-gray-400', b.dataset.tab!==pageId);
+  });
+  document.getElementById('fab').style.display = pageId==='pageDashboard'?'flex':'none';
+  window.scrollTo({top:0,behavior:'smooth'});
+  if(pageId==='pageStats') updateChart();
+}
 
 // ========== SUPABASE ==========
-function getSupaConfig() {
-  return { url: localStorage.getItem('supa_url') || '', key: localStorage.getItem('supa_key') || '' };
-}
+function getSupaConfig(){return{url:localStorage.getItem('supa_url')||'',key:localStorage.getItem('supa_key')||''};}
+function initSupabase(){const cfg=getSupaConfig();if(cfg.url&&cfg.key&&typeof window.supabase!=='undefined'){try{supabaseClient=window.supabase.createClient(cfg.url,cfg.key);updateSyncStatus('online','Supabase');syncFromSupabase();}catch(e){supabaseClient=null;updateSyncStatus('error','เชื่อมต่อไม่ได้');}}else{updateSyncStatus('offline','localStorage');}}
+function updateSyncStatus(s,t){document.getElementById('syncDot').className='sync-dot '+s;document.getElementById('syncStatus').textContent=t;}
+async function syncToSupabase(item){if(!supabaseClient)return;try{const{error}=await supabaseClient.from('food_logs').insert({name:item.name,calories:item.cal,protein:item.protein,carbs:item.carbs,fats:item.fats,meal:item.meal,logged_date:item.date||TODAY,logged_time:item.time||''});if(error)throw error;updateSyncStatus('online','Supabase ✓');}catch(e){updateSyncStatus('error','Sync ล้มเหลว');}}
+async function syncFromSupabase(){if(!supabaseClient)return;try{const{data,error}=await supabaseClient.from('food_logs').select('*').eq('logged_date',TODAY).order('created_at',{ascending:true});if(error)throw error;if(data&&data.length>0){const ti=foodLog.filter(f=>f.date===TODAY);if(ti.length===0){data.forEach(r=>{foodLog.push({id:Date.now()+Math.random(),name:r.name,cal:r.calories,protein:r.protein,carbs:r.carbs,fats:r.fats,meal:r.meal,date:r.logged_date,time:r.logged_time||''});});saveLocal();renderAll();}}updateSyncStatus('online','Supabase ✓');}catch(e){updateSyncStatus('error','ดึงข้อมูลล้มเหลว');}}
 
-function initSupabase() {
-  const cfg = getSupaConfig();
-  if (cfg.url && cfg.key && typeof window.supabase !== 'undefined') {
-    try {
-      supabaseClient = window.supabase.createClient(cfg.url, cfg.key);
-      updateSyncStatus('online', 'Supabase');
-      syncFromSupabase();
-    } catch(e) {
-      supabaseClient = null;
-      updateSyncStatus('error', 'เชื่อมต่อไม่ได้');
-    }
-  } else {
-    updateSyncStatus('offline', 'localStorage');
-  }
-}
-
-function updateSyncStatus(state, text) {
-  const dot = document.getElementById('syncDot');
-  dot.className = 'sync-dot ' + state;
-  document.getElementById('syncStatus').textContent = text;
-}
-
-async function syncToSupabase(item) {
-  if (!supabaseClient) return;
-  try {
-    const { error } = await supabaseClient.from('food_logs').insert({
-      name: item.name, calories: item.cal, protein: item.protein,
-      carbs: item.carbs, fats: item.fats, meal: item.meal,
-      logged_date: item.date || TODAY, logged_time: item.time || ''
-    });
-    if (error) throw error;
-    updateSyncStatus('online', 'Supabase ✓');
-  } catch(e) {
-    console.error('Supabase sync error:', e);
-    updateSyncStatus('error', 'Sync ล้มเหลว');
-  }
-}
-
-async function syncDeleteSupabase(id) {
-  if (!supabaseClient) return;
-  try {
-    await supabaseClient.from('food_logs').delete().eq('name', id);
-  } catch(e) { console.error(e); }
-}
-
-async function syncFromSupabase() {
-  if (!supabaseClient) return;
-  try {
-    const { data, error } = await supabaseClient.from('food_logs')
-      .select('*').eq('logged_date', TODAY).order('created_at', { ascending: true });
-    if (error) throw error;
-    if (data && data.length > 0) {
-      const todayItems = foodLog.filter(f => f.date === TODAY);
-      if (todayItems.length === 0 && data.length > 0) {
-        data.forEach(row => {
-          foodLog.push({
-            id: Date.now() + Math.random(), name: row.name, cal: row.calories,
-            protein: row.protein, carbs: row.carbs, fats: row.fats,
-            meal: row.meal, date: row.logged_date, time: row.logged_time || ''
-          });
-        });
-        saveLocal();
-        renderAll();
-      }
-    }
-    updateSyncStatus('online', 'Supabase ✓');
-  } catch(e) {
-    console.error('Supabase fetch error:', e);
-    updateSyncStatus('error', 'ดึงข้อมูลล้มเหลว');
-  }
-}
-
-// ========== SETTINGS MODAL ==========
-function openSettings() {
-  const cfg = getSupaConfig();
-  document.getElementById('supaUrl').value = cfg.url;
-  document.getElementById('supaKey').value = cfg.key;
-  document.getElementById('settingsModal').classList.remove('hidden');
-}
-function closeSettings() { document.getElementById('settingsModal').classList.add('hidden'); }
-
-async function testSupabase() {
-  const url = document.getElementById('supaUrl').value.trim();
-  const key = document.getElementById('supaKey').value.trim();
-  if (!url || !key) return showToast('กรุณากรอก URL และ Key');
-  try {
-    const client = window.supabase.createClient(url, key);
-    const { data, error } = await client.from('food_logs').select('id').limit(1);
-    if (error) throw error;
-    showToast('เชื่อมต่อสำเร็จ! ✓');
-  } catch(e) {
-    showToast('เชื่อมต่อไม่ได้: ' + (e.message || 'ตรวจสอบข้อมูลอีกครั้ง'));
-  }
-}
-
-function saveSupabaseConfig() {
-  const url = document.getElementById('supaUrl').value.trim();
-  const key = document.getElementById('supaKey').value.trim();
-  localStorage.setItem('supa_url', url);
-  localStorage.setItem('supa_key', key);
-  closeSettings();
-  initSupabase();
-  showToast('บันทึกการตั้งค่าแล้ว ✓');
-}
+// ========== SETTINGS ==========
+function openSettings(){const cfg=getSupaConfig();document.getElementById('supaUrl').value=cfg.url;document.getElementById('supaKey').value=cfg.key;document.getElementById('settingsModal').classList.remove('hidden');}
+function closeSettings(){document.getElementById('settingsModal').classList.add('hidden');}
+async function testSupabase(){const u=document.getElementById('supaUrl').value.trim(),k=document.getElementById('supaKey').value.trim();if(!u||!k)return showToast('กรุณากรอก URL และ Key');try{const c=window.supabase.createClient(u,k);const{error}=await c.from('food_logs').select('id').limit(1);if(error)throw error;showToast('เชื่อมต่อสำเร็จ! ✓');}catch(e){showToast('เชื่อมต่อไม่ได้');}}
+function saveSupabaseConfig(){localStorage.setItem('supa_url',document.getElementById('supaUrl').value.trim());localStorage.setItem('supa_key',document.getElementById('supaKey').value.trim());closeSettings();initSupabase();showToast('บันทึกการตั้งค่าแล้ว ✓');}
 
 // ========== INIT ==========
-function init() {
-  const now = new Date();
-  document.getElementById('currentDate').textContent = now.toLocaleDateString('th-TH', { weekday:'short', month:'short', day:'numeric' });
-  renderPresets(); renderFavorites(); renderAll(); initChart();
-
-  document.getElementById('foodForm').addEventListener('submit', handleAddFood);
-  const searchInput = document.getElementById('searchInput');
-  searchInput.addEventListener('input', handleSearch);
-  searchInput.addEventListener('keydown', handleSearchKeydown);
-  searchInput.addEventListener('focus', () => { if (searchInput.value.trim()) handleSearch(); });
-  document.addEventListener('click', (e) => {
-    if (!e.target.closest('#searchInput') && !e.target.closest('#searchDropdown'))
-      document.getElementById('searchDropdown').classList.add('hidden');
-  });
-
-  // PWA
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js').catch(() => {});
-  }
-  window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault();
-    window._deferredPrompt = e;
-    document.getElementById('installBtn').classList.remove('hidden');
-    document.getElementById('installBtn').classList.add('flex');
-  });
-
+function init(){
+  document.getElementById('currentDate').textContent=new Date().toLocaleDateString('th-TH',{weekday:'short',month:'short',day:'numeric'});
+  renderPresets();renderFavorites();renderAll();initChart();
+  document.getElementById('foodForm').addEventListener('submit',handleAddFood);
+  const si=document.getElementById('searchInput');
+  si.addEventListener('input',handleSearch);si.addEventListener('focus',()=>{if(si.value.trim())handleSearch();});
+  document.addEventListener('click',(e)=>{if(!e.target.closest('#searchInput')&&!e.target.closest('#searchDropdown'))document.getElementById('searchDropdown').classList.add('hidden');});
+  if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+  window.addEventListener('beforeinstallprompt',(e)=>{e.preventDefault();window._deferredPrompt=e;document.getElementById('installBtn').classList.remove('hidden');document.getElementById('installBtn').classList.add('flex');});
   initSupabase();
 }
-
-function installPWA() {
-  if (window._deferredPrompt) {
-    window._deferredPrompt.prompt();
-    window._deferredPrompt.userChoice.then(() => { window._deferredPrompt = null; });
-  }
-}
+function installPWA(){if(window._deferredPrompt){window._deferredPrompt.prompt();window._deferredPrompt.userChoice.then(()=>{window._deferredPrompt=null;});}}
 
 // ========== SEARCH ==========
-function handleSearch() {
-  const query = document.getElementById('searchInput').value.trim().toLowerCase();
-  const dropdown = document.getElementById('searchDropdown');
-  document.getElementById('searchClear').classList.toggle('hidden', !query);
-  if (!query) { dropdown.classList.add('hidden'); searchActiveIndex = -1; return; }
-  const results = FOOD_DB.filter(f => f.name.toLowerCase().includes(query));
-  searchActiveIndex = -1;
-  if (!results.length) {
-    dropdown.innerHTML = '<div class="px-4 py-6 text-center text-xs text-gray-400">ไม่พบเมนูที่ค้นหา 🔍</div>';
-    dropdown.classList.remove('hidden'); return;
-  }
-  dropdown.innerHTML = results.map(f => `
-    <button type="button" onclick="selectSearchResult(${FOOD_DB.indexOf(f)})" class="search-item w-full flex items-center gap-3 px-4 py-2.5 text-left border-b border-gray-50 last:border-0 hover:bg-brand-50 transition">
-      <span class="text-lg flex-shrink-0">${f.emoji}</span>
-      <div class="flex-1 min-w-0">
-        <p class="text-sm font-medium text-gray-700 truncate">${highlightMatch(f.name, query)}</p>
-        <div class="flex items-center gap-2 mt-0.5">
-          <span class="text-[10px] text-brand-600 font-semibold">${f.cal} kcal</span><span class="text-[10px] text-gray-300">·</span>
-          <span class="text-[10px] text-blue-500">P:${f.p}g</span><span class="text-[10px] text-orange-500">C:${f.c}g</span><span class="text-[10px] text-red-400">F:${f.f}g</span>
-        </div>
-      </div>
-    </button>`).join('');
-  dropdown.classList.remove('hidden');
-}
-function highlightMatch(t, q) { const i = t.toLowerCase().indexOf(q); if (i === -1) return t; return t.slice(0,i)+'<span class="bg-yellow-100 text-yellow-800 font-semibold">'+t.slice(i,i+q.length)+'</span>'+t.slice(i+q.length); }
-function handleSearchKeydown(e) {
-  const d = document.getElementById('searchDropdown'); if (d.classList.contains('hidden')) return;
-  const items = d.querySelectorAll('.search-item'); if (!items.length) return;
-  if (e.key==='ArrowDown') { e.preventDefault(); searchActiveIndex=Math.min(searchActiveIndex+1,items.length-1); items.forEach((el,i)=>el.classList.toggle('active',i===searchActiveIndex)); items[searchActiveIndex].scrollIntoView({block:'nearest'}); }
-  else if (e.key==='ArrowUp') { e.preventDefault(); searchActiveIndex=Math.max(searchActiveIndex-1,0); items.forEach((el,i)=>el.classList.toggle('active',i===searchActiveIndex)); items[searchActiveIndex].scrollIntoView({block:'nearest'}); }
-  else if (e.key==='Enter') { e.preventDefault(); if(searchActiveIndex>=0) items[searchActiveIndex].click(); }
-  else if (e.key==='Escape') { d.classList.add('hidden'); searchActiveIndex=-1; }
-}
-function selectSearchResult(i) {
-  const f=FOOD_DB[i]; document.getElementById('foodName').value=f.name; document.getElementById('foodCal').value=f.cal;
-  document.getElementById('foodProtein').value=f.p; document.getElementById('foodCarbs').value=f.c;
-  document.getElementById('foodFats').value=f.f; if(f.meal) document.getElementById('foodMeal').value=f.meal;
-  clearSearch(); showToast(`เลือก "${f.name}" แล้ว — กดบันทึก ✓`);
-}
-function clearSearch() { document.getElementById('searchInput').value=''; document.getElementById('searchDropdown').classList.add('hidden'); document.getElementById('searchClear').classList.add('hidden'); searchActiveIndex=-1; }
+function handleSearch(){const q=document.getElementById('searchInput').value.trim().toLowerCase(),d=document.getElementById('searchDropdown');document.getElementById('searchClear').classList.toggle('hidden',!q);if(!q){d.classList.add('hidden');return;}const r=FOOD_DB.filter(f=>f.name.toLowerCase().includes(q));if(!r.length){d.innerHTML='<div class="px-4 py-8 text-center text-sm text-gray-400">ไม่พบเมนู 🔍</div>';d.classList.remove('hidden');return;}
+d.innerHTML=r.map(f=>`<button type="button" onclick="selectSearchResult(${FOOD_DB.indexOf(f)})" class="search-item w-full flex items-center gap-3 px-4 py-3 text-left border-b border-gray-50 last:border-0"><span class="text-xl flex-shrink-0">${f.emoji}</span><div class="flex-1 min-w-0"><p class="text-sm font-medium text-gray-700 truncate">${hlMatch(f.name,q)}</p><div class="flex items-center gap-2 mt-0.5"><span class="text-[11px] text-brand-600 font-semibold">${f.cal} kcal</span><span class="text-[10px] text-blue-500">P:${f.p}</span><span class="text-[10px] text-orange-500">C:${f.c}</span><span class="text-[10px] text-red-400">F:${f.f}</span></div></div></button>`).join('');d.classList.remove('hidden');}
+function hlMatch(t,q){const i=t.toLowerCase().indexOf(q);if(i===-1)return t;return t.slice(0,i)+'<span class="bg-yellow-100 text-yellow-800 font-semibold">'+t.slice(i,i+q.length)+'</span>'+t.slice(i+q.length);}
+function selectSearchResult(i){const f=FOOD_DB[i];document.getElementById('foodName').value=f.name;document.getElementById('foodCal').value=f.cal;document.getElementById('foodProtein').value=f.p;document.getElementById('foodCarbs').value=f.c;document.getElementById('foodFats').value=f.f;if(f.meal)document.getElementById('foodMeal').value=f.meal;clearSearch();showToast(`เลือก "${f.name}" — กดบันทึก ✓`);}
+function clearSearch(){document.getElementById('searchInput').value='';document.getElementById('searchDropdown').classList.add('hidden');document.getElementById('searchClear').classList.add('hidden');}
 
 // ========== FAVORITES & PRESETS ==========
-function renderFavorites() {
-  document.getElementById('favButtons').innerHTML = FAVORITES.map((f,i) => `
-    <button onclick="addFavorite(${i})" class="fav-btn flex flex-col items-center gap-1 p-3 rounded-xl border-2 border-brand-200 bg-gradient-to-b from-brand-50 to-white hover:border-brand-400 hover:shadow-md">
-      <span class="text-xl">${f.emoji}</span><span class="text-[11px] font-semibold text-gray-700 leading-tight text-center">${f.name}</span>
-      <span class="text-[10px] text-brand-600 font-bold">${f.cal} kcal</span><span class="text-[9px] text-gray-400">P:${f.p} C:${f.c} F:${f.f}</span>
-    </button>`).join('');
-}
-function addFavorite(i) { const f=FAVORITES[i],meal=document.getElementById('favMealSelect').value; addFood({name:f.name,cal:f.cal,protein:f.p,carbs:f.c,fats:f.f,meal}); showToast(`เพิ่ม "${f.name}" → ${MEALS[meal]} ✓`); }
-function renderPresets() {
-  document.getElementById('presetButtons').innerHTML = PRESETS.map((p,i) => `
-    <button onclick="addPreset(${i})" class="preset-btn flex flex-col items-center gap-1 p-3 rounded-xl border border-brand-100 bg-brand-50/50 hover:bg-brand-100 hover:border-brand-200 hover:shadow-sm">
-      <span class="text-xl">${p.emoji}</span><span class="text-xs font-medium text-gray-700 leading-tight text-center">${p.name}</span>
-      <span class="text-[10px] text-brand-600 font-semibold">${p.cal} kcal</span><span class="text-[9px] text-gray-400">P:${p.p} C:${p.c} F:${p.f}</span>
-    </button>`).join('');
-}
-function addPreset(i) { const p=PRESETS[i],meal=document.getElementById('presetMealSelect').value; addFood({name:p.name,cal:p.cal,protein:p.p,carbs:p.c,fats:p.f,meal}); showToast(`เพิ่ม "${p.name}" → ${MEALS[meal]} ✓`); }
+function renderFavorites(){document.getElementById('favButtons').innerHTML=FAVORITES.map((f,i)=>`<button onclick="addFavorite(${i})" class="fav-btn flex flex-col items-center gap-0.5 p-2.5 rounded-xl border-2 border-brand-200 bg-gradient-to-b from-brand-50 to-white active:border-brand-400"><span class="text-xl">${f.emoji}</span><span class="text-[9px] font-semibold text-gray-700 leading-tight text-center truncate w-full">${f.name}</span><span class="text-[9px] text-brand-600 font-bold">${f.cal}</span></button>`).join('');}
+function addFavorite(i){const f=FAVORITES[i],m=document.getElementById('favMealSelect').value;addFood({name:f.name,cal:f.cal,protein:f.p,carbs:f.c,fats:f.f,meal:m});showToast(`+${f.name} → ${MEALS[m]} ✓`);}
+function renderPresets(){document.getElementById('presetButtons').innerHTML=PRESETS.map((p,i)=>`<button onclick="addPreset(${i})" class="preset-btn flex items-center gap-2.5 p-3 rounded-xl border border-brand-100 bg-brand-50/50 active:bg-brand-100 text-left"><span class="text-xl flex-shrink-0">${p.emoji}</span><div class="min-w-0"><span class="text-xs font-medium text-gray-700 block truncate">${p.name}</span><span class="text-[10px] text-brand-600">${p.cal} kcal · P:${p.p} C:${p.c} F:${p.f}</span></div></button>`).join('');}
+function addPreset(i){const p=PRESETS[i],m=document.getElementById('presetMealSelect').value;addFood({name:p.name,cal:p.cal,protein:p.p,carbs:p.c,fats:p.f,meal:m});showToast(`+${p.name} → ${MEALS[m]} ✓`);}
 
-// ========== FORM ==========
-function handleAddFood(e) {
-  e.preventDefault();
-  const name=document.getElementById('foodName').value.trim();
-  const cal=parseFloat(document.getElementById('foodCal').value)||0, protein=parseFloat(document.getElementById('foodProtein').value)||0;
-  const carbs=parseFloat(document.getElementById('foodCarbs').value)||0, fats=parseFloat(document.getElementById('foodFats').value)||0;
-  const meal=document.getElementById('foodMeal').value; if(!name) return;
-  addFood({name,cal,protein,carbs,fats,meal}); showToast(`บันทึก "${name}" ✓`); e.target.reset();
-}
-
-// ========== CORE ==========
-function addFood(item) {
-  item.id = Date.now() + Math.random();
-  item.date = TODAY;
-  item.time = new Date().toLocaleTimeString('th-TH', { hour:'2-digit', minute:'2-digit' });
-  foodLog.push(item); saveLocal(); syncToSupabase(item); renderAll();
-}
-function deleteFood(id) { foodLog=foodLog.filter(f=>f.id!==id); saveLocal(); renderAll(); showToast('ลบรายการแล้ว 🗑️'); }
-function saveLocal() { localStorage.setItem('nutritrack_log', JSON.stringify(foodLog)); }
-function resetAll() { if(confirm('ล้างข้อมูลทั้งหมด?')){ foodLog=[]; saveLocal(); renderAll(); showToast('รีเซ็ตแล้ว'); } }
+// ========== FORM & CORE ==========
+function handleAddFood(e){e.preventDefault();const n=document.getElementById('foodName').value.trim(),cal=parseFloat(document.getElementById('foodCal').value)||0,pr=parseFloat(document.getElementById('foodProtein').value)||0,ca=parseFloat(document.getElementById('foodCarbs').value)||0,fa=parseFloat(document.getElementById('foodFats').value)||0,m=document.getElementById('foodMeal').value;if(!n)return;addFood({name:n,cal,protein:pr,carbs:ca,fats:fa,meal:m});showToast(`บันทึก "${n}" ✓`);e.target.reset();}
+function addFood(item){item.id=Date.now()+Math.random();item.date=TODAY;item.time=new Date().toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'});foodLog.push(item);saveLocal();syncToSupabase(item);renderAll();}
+function deleteFood(id){foodLog=foodLog.filter(f=>f.id!==id);saveLocal();renderAll();showToast('ลบแล้ว 🗑️');}
+function saveLocal(){localStorage.setItem('nutritrack_log',JSON.stringify(foodLog));}
+function resetAll(){if(confirm('ล้างข้อมูลทั้งหมด?')){foodLog=[];saveLocal();renderAll();showToast('รีเซ็ตแล้ว');switchTab('pageDashboard');}}
 
 // ========== CHART ==========
-function initChart() {
-  const ctx = document.getElementById('weeklyChart');
-  if (!ctx) return;
-  weeklyChart = new Chart(ctx, {
-    type: 'bar',
-    data: { labels: [], datasets: [{
-      label: 'แคลอรี (kcal)',
-      data: [],
-      backgroundColor: 'rgba(16,185,129,0.6)',
-      borderColor: '#059669',
-      borderWidth: 1, borderRadius: 6, barPercentage: 0.7
-    }]},
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: {
-        legend: { display: false },
-        tooltip: { callbacks: { label: (c) => c.parsed.y + ' kcal' } }
-      },
-      scales: {
-        y: { beginAtZero: true, grid: { color: '#f3f4f6' }, ticks: { font: { size: 10 } } },
-        x: { grid: { display: false }, ticks: { font: { size: 10 } } }
-      }
-    }
-  });
-  updateChart();
-}
-
-function updateChart() {
-  if (!weeklyChart) return;
-  const days = [], cals = [];
-  for (let i = 6; i >= 0; i--) {
-    const d = new Date(); d.setDate(d.getDate() - i);
-    const ds = d.toISOString().slice(0, 10);
-    const dayName = d.toLocaleDateString('th-TH', { weekday: 'short' });
-    const dayNum = d.getDate();
-    days.push(dayName + ' ' + dayNum);
-    const dayCal = foodLog.filter(f => f.date === ds).reduce((s, f) => s + f.cal, 0);
-    cals.push(Math.round(dayCal));
-  }
-  weeklyChart.data.labels = days;
-  weeklyChart.data.datasets[0].data = cals;
-  weeklyChart.data.datasets[0].backgroundColor = cals.map(c => c > GOALS.calories ? 'rgba(239,68,68,0.5)' : 'rgba(16,185,129,0.6)');
-  weeklyChart.update();
-  const avg = cals.reduce((a,b) => a+b, 0) / 7;
-  document.getElementById('chartAvg').textContent = `เฉลี่ย ${Math.round(avg)} kcal/วัน`;
-}
+function initChart(){const ctx=document.getElementById('weeklyChart');if(!ctx)return;weeklyChart=new Chart(ctx,{type:'bar',data:{labels:[],datasets:[{label:'kcal',data:[],backgroundColor:'rgba(16,185,129,0.6)',borderColor:'#059669',borderWidth:1,borderRadius:6,barPercentage:0.7}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.parsed.y+' kcal'}}},scales:{y:{beginAtZero:true,grid:{color:'#f3f4f6'},ticks:{font:{size:9}}},x:{grid:{display:false},ticks:{font:{size:9}}}}}});updateChart();}
+function updateChart(){if(!weeklyChart)return;const days=[],cals=[];for(let i=6;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);const ds=d.toISOString().slice(0,10);days.push(d.toLocaleDateString('th-TH',{weekday:'short'})+' '+d.getDate());cals.push(Math.round(foodLog.filter(f=>f.date===ds).reduce((s,f)=>s+f.cal,0)));}weeklyChart.data.labels=days;weeklyChart.data.datasets[0].data=cals;weeklyChart.data.datasets[0].backgroundColor=cals.map(c=>c>GOALS.calories?'rgba(239,68,68,0.5)':'rgba(16,185,129,0.6)');weeklyChart.update();const avg=cals.reduce((a,b)=>a+b,0)/7;document.getElementById('chartAvg').textContent=`เฉลี่ย ${Math.round(avg)} kcal/วัน`;}
 
 // ========== RENDER ==========
-function renderAll() {
-  const todayLog = foodLog.filter(f => f.date === TODAY);
-  const totals = todayLog.reduce((a, f) => { a.cal+=f.cal; a.protein+=f.protein; a.carbs+=f.carbs; a.fats+=f.fats; return a; }, {cal:0,protein:0,carbs:0,fats:0});
+function renderAll(){
+  const tl=foodLog.filter(f=>f.date===TODAY),tot=tl.reduce((a,f)=>{a.cal+=f.cal;a.protein+=f.protein;a.carbs+=f.carbs;a.fats+=f.fats;return a;},{cal:0,protein:0,carbs:0,fats:0});
+  const cp=Math.min((tot.cal/GOALS.calories)*100,100),pc=document.getElementById('calProgressCircle');
+  if(pc){pc.style.strokeDashoffset=440-(440*cp)/100;pc.style.stroke=tot.cal>GOALS.calories?'#f87171':'';}
+  document.getElementById('calConsumed').textContent=Math.round(tot.cal).toLocaleString();
+  document.getElementById('calEaten').textContent=Math.round(tot.cal).toLocaleString();
+  document.getElementById('calRemaining').textContent=Math.round(Math.max(GOALS.calories-tot.cal,0)).toLocaleString();
+  const ov=Math.max(tot.cal-GOALS.calories,0),oe=document.getElementById('calOver');
+  oe.textContent=ov>0?`+${Math.round(ov).toLocaleString()}`:'0';oe.className=ov>0?'text-sm font-bold text-red-500':'text-sm font-bold text-gray-300';
+  const pP=Math.min((tot.protein/GOALS.protein)*100,100),cP=Math.min((tot.carbs/GOALS.carbs)*100,100),fP=Math.min((tot.fats/GOALS.fats)*100,100);
+  document.getElementById('proteinBar').style.width=pP+'%';document.getElementById('carbsBar').style.width=cP+'%';document.getElementById('fatsBar').style.width=fP+'%';
+  document.getElementById('proteinVal').textContent=tot.protein.toFixed(1);document.getElementById('carbsVal').textContent=tot.carbs.toFixed(1);document.getElementById('fatsVal').textContent=tot.fats.toFixed(1);
+  document.getElementById('proteinStatus').textContent=Math.round(pP)+'%';document.getElementById('carbsStatus').textContent=Math.round(cP)+'%';document.getElementById('fatsStatus').textContent=Math.round(fP)+'%';
 
-  const calPct = Math.min((totals.cal/GOALS.calories)*100, 100);
-  const pc = document.getElementById('calProgressCircle');
-  if (pc) { pc.style.strokeDashoffset = 440-(440*calPct)/100; pc.style.stroke = totals.cal>GOALS.calories?'#f87171':''; }
-  document.getElementById('calConsumed').textContent = Math.round(totals.cal).toLocaleString();
-  document.getElementById('calEaten').textContent = Math.round(totals.cal).toLocaleString();
-  document.getElementById('calRemaining').textContent = Math.round(Math.max(GOALS.calories-totals.cal,0)).toLocaleString();
-  const over = Math.max(totals.cal-GOALS.calories,0);
-  const overEl = document.getElementById('calOver');
-  overEl.textContent = over>0?`+${Math.round(over).toLocaleString()}`:'0';
-  overEl.className = over>0?'text-lg font-bold text-red-500':'text-lg font-bold text-gray-300';
+  // Summary
+  const se=document.getElementById('summaryCal'),si=document.getElementById('summaryItems'),sm=document.getElementById('summaryMeals');
+  if(se){se.textContent=Math.round(tot.cal);si.textContent=tl.length;sm.textContent=new Set(tl.map(f=>f.meal)).size;}
 
-  const pP=Math.min((totals.protein/GOALS.protein)*100,100), cP=Math.min((totals.carbs/GOALS.carbs)*100,100), fP=Math.min((totals.fats/GOALS.fats)*100,100);
-  document.getElementById('proteinBar').style.width=pP+'%'; document.getElementById('carbsBar').style.width=cP+'%'; document.getElementById('fatsBar').style.width=fP+'%';
-  document.getElementById('proteinVal').textContent=totals.protein.toFixed(1); document.getElementById('carbsVal').textContent=totals.carbs.toFixed(1); document.getElementById('fatsVal').textContent=totals.fats.toFixed(1);
-  document.getElementById('proteinStatus').textContent=`โปรตีน: ${Math.round(pP)}%`; document.getElementById('carbsStatus').textContent=`คาร์บ: ${Math.round(cP)}%`; document.getElementById('fatsStatus').textContent=`ไขมัน: ${Math.round(fP)}%`;
-
-  ['breakfast','lunch','dinner','snack'].forEach(meal => {
-    const items = todayLog.filter(f => f.meal === meal), list = document.getElementById(meal+'List');
-    document.getElementById(meal+'Total').textContent = Math.round(items.reduce((s,f)=>s+f.cal,0)).toLocaleString()+' kcal';
-    if (!items.length) { list.innerHTML='<div class="px-5 py-6 text-center text-xs text-gray-300">ยังไม่มีรายการอาหาร</div>'; }
-    else { list.innerHTML = items.map(f => `
-      <div class="food-item flex items-center justify-between px-5 py-3 hover:bg-gray-50/50 transition group">
-        <div class="flex-1 min-w-0">
-          <p class="text-sm font-medium text-gray-700 truncate">${f.name}</p>
-          <div class="flex items-center gap-2 mt-0.5 flex-wrap">
-            <span class="text-[10px] text-brand-600 font-semibold">${Math.round(f.cal)} kcal</span><span class="text-[10px] text-gray-300">·</span>
-            <span class="text-[10px] text-blue-500 font-medium">P:${f.protein}g</span><span class="text-[10px] text-orange-500 font-medium">C:${f.carbs}g</span><span class="text-[10px] text-red-400 font-medium">F:${f.fats}g</span>
-            ${f.time?`<span class="text-[10px] text-gray-300 ml-1">${f.time}</span>`:''}
-          </div>
-        </div>
-        <button onclick="deleteFood(${f.id})" class="ml-3 opacity-0 group-hover:opacity-100 transition w-7 h-7 flex items-center justify-center rounded-lg hover:bg-red-50 text-red-400 hover:text-red-500 flex-shrink-0" title="ลบ">
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-        </button>
-      </div>`).join(''); }
+  ['breakfast','lunch','dinner','snack'].forEach(meal=>{
+    const items=tl.filter(f=>f.meal===meal),list=document.getElementById(meal+'List');
+    document.getElementById(meal+'Total').textContent=Math.round(items.reduce((s,f)=>s+f.cal,0)).toLocaleString()+' kcal';
+    if(!items.length){list.innerHTML='<div class="px-4 py-5 text-center text-xs text-gray-300">ยังไม่มีรายการ</div>';}
+    else{list.innerHTML=items.map(f=>`<div class="food-item flex items-center justify-between px-4 py-3 active:bg-gray-50">
+      <div class="flex-1 min-w-0"><p class="text-sm font-medium text-gray-700 truncate">${f.name}</p>
+      <div class="flex items-center gap-1.5 mt-0.5 flex-wrap"><span class="text-[11px] text-brand-600 font-semibold">${Math.round(f.cal)} kcal</span><span class="text-[10px] text-blue-500">P:${f.protein}</span><span class="text-[10px] text-orange-500">C:${f.carbs}</span><span class="text-[10px] text-red-400">F:${f.fats}</span>${f.time?`<span class="text-[10px] text-gray-300">${f.time}</span>`:''}</div></div>
+      <button onclick="deleteFood(${f.id})" class="touch-btn w-10 h-10 flex items-center justify-center rounded-xl active:bg-red-50 text-red-400 flex-shrink-0"><svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
+    </div>`).join('');}
   });
   updateChart();
 }
 
-// ========== TOAST ==========
-function showToast(msg) {
-  const t=document.getElementById('toast'); document.getElementById('toastMsg').textContent=msg;
-  t.classList.remove('opacity-0','pointer-events-none','translate-y-4'); t.classList.add('opacity-100','translate-y-0');
-  clearTimeout(window._toastTimer); window._toastTimer=setTimeout(()=>{ t.classList.add('opacity-0','pointer-events-none','translate-y-4'); t.classList.remove('opacity-100','translate-y-0'); },2200);
-}
+function showToast(msg){const t=document.getElementById('toast');document.getElementById('toastMsg').textContent=msg;t.classList.remove('opacity-0','pointer-events-none','translate-y-4');t.classList.add('opacity-100','translate-y-0');clearTimeout(window._toastTimer);window._toastTimer=setTimeout(()=>{t.classList.add('opacity-0','pointer-events-none','translate-y-4');t.classList.remove('opacity-100','translate-y-0');},2200);}
 
 init();
 </script>
