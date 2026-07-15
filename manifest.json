@@ -2,20 +2,21 @@
   "name": "NutriTrack - บันทึกสารอาหารเพื่อลดน้ำหนัก",
   "short_name": "NutriTrack",
   "description": "แอปบันทึกสารอาหาร แคลอรี และ_macros เพื่อสุขภาพที่ดี",
-  "start_url": "/NutriTrack/",
+  "start_url": "./",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#ecfdf5",
   "theme_color": "#059669",
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "icon-192.png",
+      "src": "./icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "icon-512.png",
+      "src": "./icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"

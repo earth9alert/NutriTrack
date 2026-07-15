@@ -1,13 +1,10 @@
-const CACHE_NAME = 'nutritrack-v2';
+const CACHE_NAME = 'nutritrack-v3';
 const ASSETS = [
-  '/NutriTrack/',
-  '/NutriTrack/index.html',
-  '/NutriTrack/manifest.json',
-  '/NutriTrack/icon-192.png',
-  '/NutriTrack/icon-512.png',
-  'https://cdn.tailwindcss.com',
-  'https://cdn.jsdelivr.net/npm/chart.js',
-  'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2'
+  './',
+  './index.html',
+  './manifest.json',
+  './icon-192.png',
+  './icon-512.png'
 ];
 
 self.addEventListener('install', (event) => {
@@ -27,11 +24,12 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
+  if (event.request.method !== 'GET') return;
   event.respondWith(
     caches.match(event.request).then((cached) => {
       const fetchPromise = fetch(event.request)
         .then((response) => {
-          if (response.ok) {
+          if (response && response.ok) {
             const clone = response.clone();
             caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
           }
