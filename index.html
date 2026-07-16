@@ -175,6 +175,36 @@
         </div>
       </div>
 
+      <!-- Health Insight: Sleep + Nutrition -->
+      <div class="bg-gradient-to-br from-indigo-50 via-purple-50 to-brand-50 rounded-2xl shadow-sm border border-purple-100 p-4" id="healthInsightCard">
+        <div class="flex items-center gap-2 mb-3">
+          <span class="text-lg">💡</span>
+          <h2 class="text-xs font-semibold text-gray-500 tracking-wide">วิเคราะห์สุขภาพวันนี้</h2>
+        </div>
+        <div class="flex items-start gap-3">
+          <div class="flex-1">
+            <div class="flex items-center gap-4 mb-2">
+              <div class="text-center">
+                <p class="text-xl font-bold text-brand-600" id="insightCal">0</p>
+                <p class="text-[9px] text-gray-400">kcal</p>
+              </div>
+              <div class="w-px h-8 bg-gray-200"></div>
+              <div class="text-center">
+                <p class="text-xl font-bold text-indigo-600" id="insightSleep">0</p>
+                <p class="text-[9px] text-gray-400">ชม. นอน</p>
+              </div>
+              <div class="w-px h-8 bg-gray-200"></div>
+              <div class="text-center">
+                <p class="text-xl font-bold" id="insightScore">-</p>
+                <p class="text-[9px] text-gray-400">คะแนน</p>
+              </div>
+            </div>
+            <p class="text-xs text-gray-600 leading-relaxed" id="insightText">บันทึกการนอนและอาหารเพื่อรับคำแนะนำ</p>
+          </div>
+          <span class="text-3xl flex-shrink-0" id="insightEmoji">📋</span>
+        </div>
+      </div>
+
       <!-- Food Diary - Today -->
       <div class="space-y-3">
         <h2 class="text-xs font-semibold text-gray-400 tracking-wide px-1">📖 บันทึกวันนี้</h2>
@@ -275,6 +305,18 @@
           <span class="text-[10px] text-gray-400" id="sleepChartAvg"></span>
         </div>
         <div class="relative" style="height:160px"><canvas id="sleepChart"></canvas></div>
+      </div>
+      <div class="bg-white rounded-2xl shadow-sm border border-purple-100 p-4">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-xs font-semibold text-gray-400 tracking-wide">🔗 การนอน vs แคลอรี 7 วัน</h2>
+          <span class="text-[10px] text-gray-400" id="comboInsight"></span>
+        </div>
+        <div class="relative" style="height:200px"><canvas id="comboChart"></canvas></div>
+        <div class="flex items-center justify-center gap-4 mt-2">
+          <div class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-brand-400/60"></span><span class="text-[10px] text-gray-500">แคลอรี</span></div>
+          <div class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-indigo-500"></span><span class="text-[10px] text-gray-500">ชม.นอน</span></div>
+          <div class="flex items-center gap-1.5"><span class="w-3 h-0.5 bg-red-400"></span><span class="text-[10px] text-gray-500">เป้า 1,800</span></div>
+        </div>
       </div>
       <button onclick="resetAll()" class="w-full border border-red-200 text-red-400 active:bg-red-50 font-medium py-3 rounded-xl text-sm">🗑️ ล้างข้อมูลทั้งหมด</button>
     </div>
@@ -593,7 +635,7 @@ const PRESETS=[
 
 let foodLog=JSON.parse(localStorage.getItem('nutritrack_log')||'[]');
 let sleepLog=JSON.parse(localStorage.getItem('nutritrack_sleep')||'{}');
-let searchActiveIndex=-1, weeklyChart=null, sleepChart=null, supabaseClient=null;
+let searchActiveIndex=-1, weeklyChart=null, sleepChart=null, comboChart=null, supabaseClient=null;
 
 // ========== TAB NAVIGATION ==========
 function switchTab(pageId) {
@@ -605,7 +647,7 @@ function switchTab(pageId) {
   });
   document.getElementById('fab').style.display = pageId==='pageDashboard'?'flex':'none';
   window.scrollTo({top:0,behavior:'smooth'});
-  if(pageId==='pageStats'){updateChart();updateSleepChart();}
+  if(pageId==='pageStats'){updateChart();updateSleepChart();updateComboChart();}
 }
 
 // ========== SUPABASE ==========
@@ -628,7 +670,7 @@ function saveSupabaseConfig(){localStorage.setItem('supa_url',document.getElemen
 // ========== INIT ==========
 function init(){
   document.getElementById('currentDate').textContent=new Date().toLocaleDateString('th-TH',{weekday:'short',month:'short',day:'numeric'});
-  renderPresets();renderFavorites();renderAll();initChart();initSleepChart();renderSleep();
+  renderPresets();renderFavorites();renderAll();initChart();initSleepChart();initComboChart();renderSleep();updateHealthInsight();
   document.getElementById('foodForm').addEventListener('submit',handleAddFood);
   const si=document.getElementById('searchInput');
   si.addEventListener('input',handleSearch);si.addEventListener('focus',()=>{if(si.value.trim())handleSearch();});
@@ -657,7 +699,7 @@ function handleAddFood(e){e.preventDefault();const n=document.getElementById('fo
 function addFood(item){item.id=Date.now()+Math.random();item.date=TODAY;item.time=new Date().toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'});foodLog.push(item);saveLocal();syncToSupabase(item);renderAll();}
 function deleteFood(id){foodLog=foodLog.filter(f=>f.id!==id);saveLocal();renderAll();showToast('ลบแล้ว 🗑️');}
 function saveLocal(){localStorage.setItem('nutritrack_log',JSON.stringify(foodLog));}
-function resetAll(){if(confirm('ล้างข้อมูลทั้งหมด?')){foodLog=[];sleepLog={};saveLocal();localStorage.setItem('nutritrack_sleep',JSON.stringify(sleepLog));renderAll();renderSleep();updateSleepChart();showToast('รีเซ็ตแล้ว');switchTab('pageDashboard');}}
+function resetAll(){if(confirm('ล้างข้อมูลทั้งหมด?')){foodLog=[];sleepLog={};saveLocal();localStorage.setItem('nutritrack_sleep',JSON.stringify(sleepLog));renderAll();renderSleep();updateSleepChart();updateComboChart();updateHealthInsight();showToast('รีเซ็ตแล้ว');switchTab('pageDashboard');}}
 
 // ========== CHART ==========
 function initChart(){const ctx=document.getElementById('weeklyChart');if(!ctx)return;weeklyChart=new Chart(ctx,{type:'bar',data:{labels:[],datasets:[{label:'kcal',data:[],backgroundColor:'rgba(16,185,129,0.6)',borderColor:'#059669',borderWidth:1,borderRadius:6,barPercentage:0.7}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.parsed.y+' kcal'}}},scales:{y:{beginAtZero:true,grid:{color:'#f3f4f6'},ticks:{font:{size:9}}},x:{grid:{display:false},ticks:{font:{size:9}}}}}});updateChart();}
@@ -671,7 +713,18 @@ function updateSleepChart(){if(!sleepChart)return;const days=[],hours=[];for(let
 function adjustSleep(delta){let h=parseFloat(document.getElementById('sleepHours').textContent)||0;h=Math.max(0,Math.min(24,h+delta));document.getElementById('sleepHours').textContent=h;updateSleepQuality(h);}
 function updateSleepQuality(h){const el=document.getElementById('sleepQuality');if(h===0){el.textContent='';el.className='text-[9px] px-2 py-0.5 rounded-full';}else if(h>=7){el.textContent='😊 นอนพอ';el.className='text-[9px] px-2 py-0.5 rounded-full bg-green-50 text-green-600';}else if(h>=5){el.textContent='😐 นอนน้อย';el.className='text-[9px] px-2 py-0.5 rounded-full bg-amber-50 text-amber-600';}else{el.textContent='😵 นอนไม่พอ';el.className='text-[9px] px-2 py-0.5 rounded-full bg-red-50 text-red-500';}}
 function saveSleep(){const h=parseFloat(document.getElementById('sleepHours').textContent)||0;if(h===0)return showToast('กรุณาใส่ชั่วโมงการนอน');sleepLog[TODAY]=h;localStorage.setItem('nutritrack_sleep',JSON.stringify(sleepLog));syncSleepToSupabase(h);renderSleep();updateSleepChart();showToast(`บันทึก ${h} ชม. ✓`);}
-function renderSleep(){const h=sleepLog[TODAY]||0;document.getElementById('sleepHours').textContent=h;document.getElementById('sleepDateLabel').textContent=new Date().toLocaleDateString('th-TH',{month:'short',day:'numeric'});updateSleepQuality(h);const el=document.getElementById('summarySleep');if(el)el.textContent=h;if(sleepLog[TODAY])document.getElementById('sleepStatus').textContent='บันทึกแล้ว ✓';}
+function renderSleep(){const h=sleepLog[TODAY]||0;document.getElementById('sleepHours').textContent=h;document.getElementById('sleepDateLabel').textContent=new Date().toLocaleDateString('th-TH',{month:'short',day:'numeric'});updateSleepQuality(h);const el=document.getElementById('summarySleep');if(el)el.textContent=h;if(sleepLog[TODAY])document.getElementById('sleepStatus').textContent='บันทึกแล้ว ✓';updateHealthInsight();}
+
+// ========== COMBO CHART (Sleep + Calories) ==========
+function initComboChart(){const ctx=document.getElementById('comboChart');if(!ctx)return;comboChart=new Chart(ctx,{type:'bar',data:{labels:[],datasets:[{label:'แคลอรี',data:[],backgroundColor:'rgba(16,185,129,0.4)',borderColor:'#059669',borderWidth:1,borderRadius:4,barPercentage:0.6,yAxisID:'y'},{label:'ชม.นอน',type:'line',data:[],borderColor:'#6366f1',backgroundColor:'rgba(99,102,241,0.1)',pointBackgroundColor:'#6366f1',pointRadius:5,pointHoverRadius:7,borderWidth:2.5,tension:0.3,fill:true,yAxisID:'y1'},{label:'เป้า 1,800',type:'line',data:[],borderColor:'rgba(239,68,68,0.4)',borderDash:[6,4],borderWidth:1.5,pointRadius:0,fill:false,yAxisID:'y'}]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){if(c.datasetIndex===0)return c.parsed.y+' kcal';if(c.datasetIndex===1)return c.parsed.y+' ชม.';return 'เป้า '+c.parsed.y+' kcal';}}}},scales:{y:{beginAtZero:true,position:'left',grid:{color:'#f3f4f6'},ticks:{font:{size:9},callback:v=>v>=1000?(v/1000)+'k':v},title:{display:true,text:'kcal',font:{size:9},color:'#9ca3af'}},y1:{beginAtZero:true,max:12,position:'right',grid:{drawOnChartArea:false},ticks:{font:{size:9},callback:v=>v+'ชม.'},title:{display:true,text:'นอน',font:{size:9},color:'#6366f1'}},x:{grid:{display:false},ticks:{font:{size:9}}}}}});updateComboChart();}
+function updateComboChart(){if(!comboChart)return;const days=[],cals=[],hours=[],goals=[];for(let i=6;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);const ds=d.toISOString().slice(0,10);days.push(d.toLocaleDateString('th-TH',{weekday:'short'})+' '+d.getDate());cals.push(Math.round(foodLog.filter(f=>f.date===ds).reduce((s,f)=>s+f.cal,0)));hours.push(sleepLog[ds]||0);goals.push(GOALS.calories);}comboChart.data.labels=days;comboChart.data.datasets[0].data=cals;comboChart.data.datasets[0].backgroundColor=cals.map((c,i)=>hours[i]>0&&hours[i]<7&&c>GOALS.calories?'rgba(239,68,68,0.4)':'rgba(16,185,129,0.4)');comboChart.data.datasets[1].data=hours;comboChart.data.datasets[2].data=goals;comboChart.update();const validDays=cals.filter((c,i)=>c>0&&hours[i]>0);if(validDays.length>=2){const overEat=cals.filter((c,i)=>c>GOALS.calories).length;const poorSleep=hours.filter(h=>h>0&&h<7).length;const ci=document.getElementById('comboInsight');ci.textContent=`${poorSleep} คืนนอนน้อย / ${overEat} วันกินเกิน`;}else{document.getElementById('comboInsight').textContent='';}}
+
+// ========== HEALTH INSIGHT ==========
+function updateHealthInsight(){const tl=foodLog.filter(f=>f.date===TODAY);const cal=tl.reduce((s,f)=>s+f.cal,0);const sl=sleepLog[TODAY]||0;document.getElementById('insightCal').textContent=Math.round(cal);document.getElementById('insightSleep').textContent=sl;let score=0,emoji='📋',text='',scoreColor='text-gray-300';if(cal===0&&sl===0){document.getElementById('insightScore').textContent='-';document.getElementById('insightScore').className='text-xl font-bold text-gray-300';document.getElementById('insightText').textContent='บันทึกการนอนและอาหารเพื่อรับคำแนะนำ';document.getElementById('insightEmoji').textContent='📋';return;}
+if(sl>=7)score+=40;else if(sl>=5)score+=20;else if(sl>0)score+=5;
+if(cal>0&&cal<=GOALS.calories)score+=40;else if(cal>GOALS.calories&&cal<=GOALS.calories*1.1)score+=25;else if(cal>GOALS.calories*1.1)score+=10;else if(cal>0)score+=15;
+const protein=tl.reduce((s,f)=>s+f.protein,0);if(protein>=GOALS.protein*0.8)score+=20;else if(protein>=GOALS.protein*0.5)score+=10;
+if(score>=80){emoji='🌟';text='ยอดเยี่ยม! นอนพอและกินอยู่ในเป้า ร่างกายพร้อมลุยต่อ!';scoreColor='text-green-600';}else if(score>=60){emoji='😊';text='ดีมาก! ใกล้ครบเป้าแล้ว';if(sl<7)text+='. ลองนอนให้ครบ 7 ชม. จะดีมากขึ้น';scoreColor='text-brand-600';}else if(score>=40){emoji='👍';text='ใช้ได้ แต่ยังมีพื้นที่ให้ปรับ';if(sl<7&&cal>GOALS.calories)text='. นอนน้อยมักทำให้อยากอาหารมากขึ้น ลองนอนเร็วขึ้นดู';else if(sl<7)text='. ลองเพิ่มชั่วโมงนอนอีกนิด';else if(cal>GOALS.calories)text='. ลดปริมาณอาหารลงอีกนิดนะ';scoreColor='text-amber-600';}else if(score>=20){emoji='⚠️';text='ต้องปรับ! ';if(sl<5&&cal>GOALS.calories)text+='นอนน้อย+กินเกิน เสี่ยงน้ำหนักขึ้น ควรนอนให้พอจะช่วยคุมอาหารได้ดีขึ้น';else if(sl<5)text+='นอนน้อยเกินไป ส่งผลต่อฮอร์โมนหิวและระบบเผาผลาญ';else text+='ยังกินน้อยไป ลองเพิ่มโปรตีนและอาหารที่มีประโยชน์';scoreColor='text-orange-500';}else{emoji='😰';text='เริ่มบันทึกกันเลย! บันทึกการนอนและอาหารเพื่อให้เห็นภาพรวมสุขภาพ';scoreColor='text-red-500';}document.getElementById('insightScore').textContent=score;document.getElementById('insightScore').className='text-xl font-bold '+scoreColor;document.getElementById('insightEmoji').textContent=emoji;document.getElementById('insightText').textContent=text;}
 
 // ========== RENDER ==========
 function renderAll(){
@@ -703,7 +756,7 @@ function renderAll(){
       <button onclick="deleteFood(${f.id})" class="touch-btn w-10 h-10 flex items-center justify-center rounded-xl active:bg-red-50 text-red-400 flex-shrink-0"><svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>
     </div>`).join('');}
   });
-  updateChart();
+  updateChart();updateHealthInsight();
 }
 
 function showToast(msg){const t=document.getElementById('toast');document.getElementById('toastMsg').textContent=msg;t.classList.remove('opacity-0','pointer-events-none','translate-y-4');t.classList.add('opacity-100','translate-y-0');clearTimeout(window._toastTimer);window._toastTimer=setTimeout(()=>{t.classList.add('opacity-0','pointer-events-none','translate-y-4');t.classList.remove('opacity-100','translate-y-0');},2200);}
