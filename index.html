@@ -321,10 +321,71 @@ const GOALS={calories:1800,protein:120,carbs:150,fats:50};
 const MEALS={breakfast:'มื้อเช้า',lunch:'มื้อกลางวัน',dinner:'มื้อเย็น',snack:'ของว่าง'};
 const TODAY=new Date().toISOString().slice(0,10);
 const FOOD_DB=[
-  // === อาหารจานเดียว ===
+  // ══════════════════════════════════════
+  // 🏔️ อาหารเหนือ (Northern Thai)
+  // ══════════════════════════════════════
+  {name:'ข้าวซอยไก่',cal:450,p:22,c:50,f:18,emoji:'🍜',meal:'lunch'},
+  {name:'ข้าวซอยเนื้อ',cal:480,p:25,c:48,f:20,emoji:'🍜',meal:'lunch'},
+  {name:'ขนมจีนน้ำเงี้ยว',cal:350,p:15,c:48,f:10,emoji:'🍜',meal:'lunch'},
+  {name:'น้ำพริกหนุ่ม',cal:120,p:5,c:15,f:5,emoji:'🌶️',meal:'lunch'},
+  {name:'น้ำพริกหนุ่ม+ผัก+แคบหมู',cal:380,p:15,c:25,f:26,emoji:'🌶️',meal:'lunch'},
+  {name:'น้ำพริกตาแดง',cal:100,p:4,c:12,f:4,emoji:'🌶️',meal:'lunch'},
+  {name:'น้ำพริกตาแดง+ผัก+ไข่ต้ม',cal:280,p:18,c:18,f:16,emoji:'🌶️',meal:'lunch'},
+  {name:'แกงฮังเล',cal:380,p:25,c:15,f:26,emoji:'🍲',meal:'dinner'},
+  {name:'แกงโฮะ',cal:320,p:18,c:20,f:20,emoji:'🍲',meal:'dinner'},
+  {name:'แกงแคไก่',cal:280,p:22,c:15,f:16,emoji:'🍲',meal:'dinner'},
+  {name:'แกงผักกาด',cal:150,p:6,c:18,f:6,emoji:'🥬',meal:'dinner'},
+  {name:'ลาบเหนือ (ขม)',cal:220,p:22,c:6,f:12,emoji:'🥗',meal:'lunch'},
+  {name:'ลาบคั่ว',cal:250,p:20,c:8,f:16,emoji:'🥗',meal:'lunch'},
+  {name:'ส้าเนื้อ',cal:200,p:24,c:5,f:10,emoji:'🥩',meal:'lunch'},
+  {name:'ไส้อั่ว',cal:280,p:14,c:8,f:22,emoji:'🌭',meal:'lunch'},
+  {name:'แคบหมู 5 ชิ้น',cal:200,p:12,c:2,f:16,emoji:'🥓',meal:'snack'},
+  {name:'แคบหมู+น้ำพริกหนุ่ม',cal:320,p:17,c:17,f:21,emoji:'🌶️',meal:'lunch'},
+  {name:'ข้าวเหนียว 1 ห่อ',cal:180,p:4,c:38,f:1,emoji:'🍚',meal:'lunch'},
+  {name:'ข้าวเหนียว+ไส้อั่ว',cal:460,p:18,c:46,f:23,emoji:'🍚',meal:'lunch'},
+  {name:'ข้าวกันจิ้น',cal:350,p:18,c:50,f:8,emoji:'🍚',meal:'lunch'},
+  {name:'ต่าหมู (น้ำพริก)',cal:180,p:15,c:10,f:10,emoji:'🌶️',meal:'lunch'},
+  {name:'ข้าวหลาม 1 กระบอก',cal:320,p:5,c:60,f:8,emoji:'🎍',meal:'snack'},
+  // ══════════════════════════════════════
+  // 🌾 อาหารอีสาน (Northeastern Thai)
+  // ══════════════════════════════════════
+  {name:'ส้มตำไทย',cal:150,p:5,c:22,f:5,emoji:'🥗',meal:'lunch'},
+  {name:'ส้มตำปู',cal:140,p:8,c:18,f:4,emoji:'🥗',meal:'lunch'},
+  {name:'ส้มตำปูปลาร้า',cal:160,p:10,c:20,f:5,emoji:'🥗',meal:'lunch'},
+  {name:'ส้มตำไข่เค็ม',cal:200,p:10,c:22,f:8,emoji:'🥗',meal:'lunch'},
+  {name:'ตำซั่ว',cal:180,p:6,c:28,f:5,emoji:'🥗',meal:'lunch'},
+  {name:'ตำถาด',cal:350,p:18,c:40,f:14,emoji:'🥗',meal:'lunch'},
+  {name:'ลาบหมู',cal:220,p:20,c:8,f:12,emoji:'🥗',meal:'lunch'},
+  {name:'ลาบเนื้อ',cal:210,p:24,c:6,f:10,emoji:'🥗',meal:'lunch'},
+  {name:'ลาบไก่',cal:180,p:22,c:6,f:8,emoji:'🥗',meal:'lunch'},
+  {name:'ลาบเป็ด',cal:200,p:20,c:6,f:12,emoji:'🥗',meal:'lunch'},
+  {name:'น้ำตกหมู',cal:200,p:18,c:8,f:12,emoji:'🥗',meal:'lunch'},
+  {name:'น้ำตกเนื้อ',cal:190,p:22,c:6,f:10,emoji:'🥗',meal:'lunch'},
+  {name:'ก้อยเนื้อ',cal:180,p:22,c:5,f:8,emoji:'🥩',meal:'lunch'},
+  {name:'ซุบหน่อไม้',cal:100,p:4,c:15,f:3,emoji:'🎍',meal:'lunch'},
+  {name:'ต้มแซ่บกระดูกอ่อน',cal:250,p:18,c:10,f:16,emoji:'🍲',meal:'dinner'},
+  {name:'ต้มแซ่บซี่โครง',cal:280,p:20,c:8,f:20,emoji:'🍲',meal:'dinner'},
+  {name:'แกงอ่อมหมู',cal:260,p:18,c:12,f:16,emoji:'🍲',meal:'dinner'},
+  {name:'แกงอ่อมไก่',cal:220,p:22,c:10,f:12,emoji:'🍲',meal:'dinner'},
+  {name:'แกงเห็ด',cal:120,p:6,c:15,f:4,emoji:'🍄',meal:'dinner'},
+  {name:'แจ่วบอง',cal:80,p:3,c:10,f:3,emoji:'🌶️',meal:'lunch'},
+  {name:'แจ่ว+ผัก+ไข่ต้ม',cal:250,p:16,c:20,f:12,emoji:'🌶️',meal:'lunch'},
+  {name:'น้ำพริกปลาร้า+ผัก',cal:180,p:12,c:18,f:7,emoji:'🌶️',meal:'lunch'},
+  {name:'ปลาร้าบอง',cal:90,p:6,c:8,f:4,emoji:'🐟',meal:'lunch'},
+  {name:'ไก่ย่าง 1 น่อง',cal:280,p:25,c:5,f:18,emoji:'🍗',meal:'lunch'},
+  {name:'คอหมูย่าง',cal:320,p:18,c:5,f:26,emoji:'🥩',meal:'lunch'},
+  {name:'หมูย่างจิ้มแจ่ว',cal:300,p:22,c:8,f:22,emoji:'🥩',meal:'lunch'},
+  {name:'ปลานิลย่าง+แจ่ว',cal:220,p:32,c:5,f:8,emoji:'🐟',meal:'lunch'},
+  {name:'ปลาช่อนย่าง',cal:200,p:30,c:2,f:8,emoji:'🐟',meal:'lunch'},
+  {name:'ข้าวเหนียว+ไก่ย่าง',cal:460,p:29,c:43,f:19,emoji:'🍗',meal:'lunch'},
+  {name:'ข้าวเหนียว+ส้มตำ',cal:330,p:9,c:60,f:6,emoji:'🍚',meal:'lunch'},
+  // ══════════════════════════════════════
+  // 🏙️ อาหารกลาง (Central Thai)
+  // ══════════════════════════════════════
   {name:'ข้าวกะเพราไก่ไข่ดาว',cal:550,p:28,c:65,f:18,emoji:'🍛',meal:'lunch'},
   {name:'ข้าวกะเพราหมู',cal:520,p:22,c:62,f:20,emoji:'🍛',meal:'lunch'},
   {name:'ข้าวกะเพราหมูไข่ดาว',cal:600,p:28,c:65,f:24,emoji:'🍛',meal:'lunch'},
+  {name:'ข้าวกะเพราไข่',cal:400,p:16,c:55,f:14,emoji:'🍛',meal:'lunch'},
   {name:'ข้าวผัดหมู',cal:480,p:18,c:60,f:16,emoji:'🍚',meal:'lunch'},
   {name:'ข้าวผัดไก่',cal:460,p:22,c:58,f:14,emoji:'🍚',meal:'lunch'},
   {name:'ข้าวผัดกุ้ง',cal:420,p:18,c:55,f:14,emoji:'🍚',meal:'lunch'},
@@ -335,7 +396,9 @@ const FOOD_DB=[
   {name:'ข้าวหมูกรอบ',cal:580,p:22,c:68,f:24,emoji:'🍚',meal:'lunch'},
   {name:'ข้าวคลุกกะปิ',cal:480,p:18,c:65,f:16,emoji:'🍚',meal:'lunch'},
   {name:'ข้าวผัดอเมริกัน',cal:520,p:20,c:60,f:22,emoji:'🍳',meal:'lunch'},
-  // === ก๋วยเตี๋ยว/เส้น ===
+  {name:'ข้าวไข่เจียว',cal:380,p:14,c:50,f:14,emoji:'🍳',meal:'lunch'},
+  {name:'ข้าวผัดพริกแกงหมู',cal:500,p:20,c:60,f:20,emoji:'🍛',meal:'lunch'},
+  // --- ก๋วยเตี๋ยว/เส้น ---
   {name:'ก๋วยเตี๋ยวเส้นเล็กน้ำใส',cal:320,p:15,c:45,f:8,emoji:'🍜',meal:'lunch'},
   {name:'ก๋วยเตี๋ยวต้มยำ',cal:350,p:15,c:45,f:12,emoji:'🍜',meal:'lunch'},
   {name:'ก๋วยเตี๋ยวแห้ง',cal:380,p:18,c:50,f:12,emoji:'🍜',meal:'lunch'},
@@ -343,46 +406,42 @@ const FOOD_DB=[
   {name:'บะหมี่น้ำ',cal:380,p:16,c:48,f:12,emoji:'🍜',meal:'lunch'},
   {name:'ก๋วยเตี๋ยวเรือ',cal:280,p:14,c:38,f:8,emoji:'🍜',meal:'lunch'},
   {name:'ผัดไทย',cal:450,p:15,c:60,f:18,emoji:'🍝',meal:'lunch'},
+  {name:'ผัดไทยกุ้งสด',cal:500,p:22,c:58,f:20,emoji:'🍝',meal:'lunch'},
   {name:'ผัดซีอิ๊ว',cal:420,p:14,c:58,f:16,emoji:'🍝',meal:'lunch'},
   {name:'ราดหน้า',cal:480,p:18,c:60,f:18,emoji:'🍲',meal:'lunch'},
-  {name:'ขนมจีนน้ำยา',cal:320,p:12,c:50,f:8,emoji:'🍜',meal:'lunch'},
   {name:'เย็นตาโฟ',cal:300,p:12,c:40,f:10,emoji:'🍜',meal:'lunch'},
-  // === แกง/ต้ม ===
+  {name:'ก๋วยเตี๋ยวลุยสวน',cal:250,p:10,c:35,f:8,emoji:'🌯',meal:'lunch'},
+  // --- แกง/ต้ม ---
   {name:'แกงเขียวหวานไก่',cal:380,p:22,c:18,f:26,emoji:'🍲',meal:'lunch'},
+  {name:'แกงเขียวหวานลูกชิ้นปลา',cal:300,p:18,c:15,f:20,emoji:'🍲',meal:'lunch'},
   {name:'แกงเผ็ดหมู',cal:350,p:20,c:15,f:24,emoji:'🍲',meal:'lunch'},
+  {name:'แกงเผ็ดเป็ด',cal:380,p:22,c:12,f:28,emoji:'🍲',meal:'lunch'},
   {name:'แกงส้มผักรวม',cal:180,p:8,c:20,f:8,emoji:'🍲',meal:'lunch'},
+  {name:'แกงส้มปลาช่อน',cal:220,p:20,c:18,f:10,emoji:'🍲',meal:'lunch'},
   {name:'ต้มยำกุ้ง',cal:200,p:18,c:12,f:10,emoji:'🍲',meal:'dinner'},
+  {name:'ต้มยำน้ำข้น',cal:280,p:18,c:15,f:18,emoji:'🍲',meal:'dinner'},
   {name:'ต้มข่าไก่',cal:250,p:20,c:10,f:16,emoji:'🍲',meal:'dinner'},
   {name:'ต้มจืดเต้าหู้หมูสับ',cal:200,p:18,c:8,f:11,emoji:'🍲',meal:'dinner'},
   {name:'ต้มจืดวุ้นเส้น',cal:180,p:12,c:20,f:6,emoji:'🍲',meal:'dinner'},
   {name:'แกงจืดมะระ',cal:160,p:10,c:12,f:8,emoji:'🍲',meal:'dinner'},
   {name:'พะโล้',cal:280,p:15,c:25,f:14,emoji:'🍲',meal:'dinner'},
-  // === ผัด ===
+  {name:'ต้มโคล้งปลากรอบ',cal:220,p:16,c:18,f:10,emoji:'🍲',meal:'dinner'},
+  // --- ผัด ---
   {name:'ผัดผักบุ้งไฟแดง',cal:120,p:4,c:10,f:7,emoji:'🥬',meal:'dinner'},
   {name:'ผัดกะเพราไข่',cal:220,p:12,c:8,f:16,emoji:'🍳',meal:'lunch'},
   {name:'ผัดพริกแกงหมู',cal:280,p:18,c:15,f:18,emoji:'🌶️',meal:'dinner'},
   {name:'ผัดคะน้าหมูกรอบ',cal:320,p:18,c:12,f:22,emoji:'🥬',meal:'dinner'},
   {name:'ผัดผักรวมมิตร',cal:150,p:6,c:15,f:8,emoji:'🥗',meal:'dinner'},
-  // === อาหารเช้าง่ายๆ ===
-  {name:'ไข่เจียว',cal:180,p:12,c:2,f:14,emoji:'🍳',meal:'breakfast'},
-  {name:'ไข่ต้ม 1 ฟอง',cal:75,p:7,c:0,f:5,emoji:'🥚',meal:'breakfast'},
-  {name:'ไข่กระทะ',cal:320,p:18,c:15,f:22,emoji:'🍳',meal:'breakfast'},
-  {name:'โจ๊กหมู',cal:280,p:12,c:42,f:7,emoji:'🥣',meal:'breakfast'},
-  {name:'ข้าวต้มหมู',cal:280,p:12,c:40,f:7,emoji:'🥣',meal:'breakfast'},
-  {name:'ข้าวต้มกุ้ง',cal:250,p:14,c:38,f:5,emoji:'🥣',meal:'breakfast'},
-  {name:'ข้าวเหนียวหมูปิ้ง',cal:400,p:15,c:55,f:14,emoji:'🍖',meal:'breakfast'},
-  {name:'ปาท่องโก๋ 1 คู่',cal:240,p:6,c:35,f:10,emoji:'🥐',meal:'breakfast'},
-  {name:'ขนมปังปิ้ง',cal:160,p:4,c:28,f:4,emoji:'🍞',meal:'breakfast'},
-  {name:'ข้าวกล้อง 1 ทัพพี',cal:120,p:3,c:25,f:1,emoji:'🍚',meal:'lunch'},
-  {name:'ข้าวขาว 1 ทัพพี',cal:130,p:2,c:28,f:0,emoji:'🍚',meal:'lunch'},
-  // === ส้มตำ/ยำ ===
-  {name:'ส้มตำไทย',cal:150,p:5,c:22,f:5,emoji:'🥗',meal:'lunch'},
-  {name:'ส้มตำปู',cal:140,p:8,c:18,f:4,emoji:'🥗',meal:'lunch'},
+  {name:'ผัดไทยไข่',cal:400,p:14,c:55,f:16,emoji:'🍝',meal:'lunch'},
+  {name:'ผัดวุ้นเส้นไข่',cal:280,p:10,c:38,f:10,emoji:'🍝',meal:'dinner'},
+  {name:'ผัดบวบไข่',cal:130,p:8,c:10,f:7,emoji:'🥒',meal:'dinner'},
+  // --- ยำ ---
   {name:'ยำวุ้นเส้น',cal:180,p:12,c:22,f:5,emoji:'🥗',meal:'lunch'},
   {name:'ยำทูน่า',cal:160,p:22,c:8,f:5,emoji:'🥗',meal:'lunch'},
-  {name:'ลาบหมู',cal:220,p:20,c:8,f:12,emoji:'🥗',meal:'lunch'},
-  {name:'น้ำตกหมู',cal:200,p:18,c:8,f:12,emoji:'🥗',meal:'lunch'},
-  // === เนื้อสัตว์/โปรตีน ===
+  {name:'ยำรวมมิตร',cal:200,p:18,c:15,f:8,emoji:'🥗',meal:'lunch'},
+  {name:'ยำมะม่วง',cal:120,p:4,c:20,f:4,emoji:'🥭',meal:'lunch'},
+  {name:'ยำไข่ดาว',cal:220,p:12,c:8,f:16,emoji:'🍳',meal:'lunch'},
+  // --- เนื้อสัตว์/โปรตีน ---
   {name:'อกไก่ต้ม',cal:165,p:31,c:0,f:4,emoji:'🍗',meal:'lunch'},
   {name:'อกไก่นุ่ม',cal:120,p:25,c:0,f:2,emoji:'🍗',meal:'lunch'},
   {name:'อกไก่ย่าง',cal:180,p:30,c:2,f:6,emoji:'🍗',meal:'lunch'},
@@ -393,7 +452,54 @@ const FOOD_DB=[
   {name:'หมูย่าง 3 ชิ้น',cal:280,p:22,c:5,f:20,emoji:'🥩',meal:'lunch'},
   {name:'สเต็กไก่',cal:220,p:35,c:5,f:7,emoji:'🍗',meal:'lunch'},
   {name:'ทูน่ากระป๋อง',cal:120,p:26,c:0,f:1,emoji:'🐟',meal:'lunch'},
-  // === เครื่องดื่ม/ของว่าง ===
+  // ══════════════════════════════════════
+  // 🏖️ อาหารใต้ (Southern Thai)
+  // ══════════════════════════════════════
+  {name:'แกงเหลืองปลา',cal:250,p:22,c:15,f:12,emoji:'🍲',meal:'lunch'},
+  {name:'แกงส้มปลากระพง',cal:280,p:24,c:18,f:14,emoji:'🍲',meal:'lunch'},
+  {name:'แกงไตปลา',cal:200,p:15,c:10,f:12,emoji:'🍲',meal:'lunch'},
+  {name:'แกงพริกกระดูกหมู',cal:350,p:20,c:12,f:26,emoji:'🍲',meal:'dinner'},
+  {name:'แกงคั่วใบชะพลู',cal:300,p:18,c:12,f:22,emoji:'🍲',meal:'dinner'},
+  {name:'แกงคั่วสับปะรดกุ้ง',cal:250,p:18,c:22,f:12,emoji:'🍲',meal:'dinner'},
+  {name:'คั่วกลิ้งหมู',cal:280,p:20,c:10,f:18,emoji:'🌶️',meal:'lunch'},
+  {name:'ผัดสะตอกุ้ง',cal:250,p:18,c:15,f:14,emoji:'🥬',meal:'lunch'},
+  {name:'ผัดสะตอหมู',cal:280,p:18,c:12,f:18,emoji:'🥬',meal:'lunch'},
+  {name:'ผัดพริกแกงใต้',cal:300,p:20,c:10,f:22,emoji:'🌶️',meal:'dinner'},
+  {name:'น้ำพริกกุ้งสด',cal:120,p:14,c:8,f:4,emoji:'🌶️',meal:'lunch'},
+  {name:'น้ำพริกกุ้งสด+ผัก',cal:220,p:18,c:20,f:10,emoji:'🌶️',meal:'lunch'},
+  {name:'น้ำบูดู+ผัก+ข้าว',cal:300,p:12,c:40,f:8,emoji:'🌶️',meal:'lunch'},
+  {name:'ข้าวยำ',cal:380,p:12,c:55,f:12,emoji:'🥗',meal:'lunch'},
+  {name:'ข้าวยำ+ปลาทู',cal:520,p:28,c:58,f:20,emoji:'🥗',meal:'lunch'},
+  {name:'ขนมจีนน้ำยาปู',cal:350,p:18,c:48,f:10,emoji:'🍜',meal:'lunch'},
+  {name:'ขนมจีนน้ำยาใต้',cal:380,p:20,c:50,f:12,emoji:'🍜',meal:'lunch'},
+  {name:'ปลาทรายทอดขมิ้น',cal:250,p:24,c:8,f:14,emoji:'🐟',meal:'lunch'},
+  {name:'ปลาทอดขมิ้น+น้ำพริก',cal:350,p:28,c:18,f:20,emoji:'🐟',meal:'lunch'},
+  {name:'หอยทอด',cal:320,p:14,c:30,f:18,emoji:'🦪',meal:'snack'},
+  {name:'ปลาหมึกย่าง',cal:180,p:28,c:5,f:5,emoji:'🦑',meal:'dinner'},
+  {name:'ไก่ทอดหาดใหญ่',cal:350,p:22,c:18,f:22,emoji:'🍗',meal:'lunch'},
+  {name:'ไก่ทอด+ข้าวเหนียว',cal:530,p:26,c:56,f:23,emoji:'🍗',meal:'lunch'},
+  {name:'โรตี+แกงเขียวหวาน',cal:520,p:18,c:55,f:26,emoji:'🫓',meal:'lunch'},
+  {name:'โรตีแกงไก่',cal:480,p:20,c:50,f:22,emoji:'🫓',meal:'lunch'},
+  {name:'มะตะบะไก่',cal:350,p:18,c:30,f:18,emoji:'🫓',meal:'snack'},
+  // ══════════════════════════════════════
+  // 🌅 อาหารเช้า
+  // ══════════════════════════════════════
+  {name:'ไข่เจียว',cal:180,p:12,c:2,f:14,emoji:'🍳',meal:'breakfast'},
+  {name:'ไข่ต้ม 1 ฟอง',cal:75,p:7,c:0,f:5,emoji:'🥚',meal:'breakfast'},
+  {name:'ไข่กระทะ',cal:320,p:18,c:15,f:22,emoji:'🍳',meal:'breakfast'},
+  {name:'โจ๊กหมู',cal:280,p:12,c:42,f:7,emoji:'🥣',meal:'breakfast'},
+  {name:'โจ๊กไข่',cal:200,p:10,c:35,f:4,emoji:'🥣',meal:'breakfast'},
+  {name:'ข้าวต้มหมู',cal:280,p:12,c:40,f:7,emoji:'🥣',meal:'breakfast'},
+  {name:'ข้าวต้มกุ้ง',cal:250,p:14,c:38,f:5,emoji:'🥣',meal:'breakfast'},
+  {name:'ข้าวเหนียวหมูปิ้ง',cal:400,p:15,c:55,f:14,emoji:'🍖',meal:'breakfast'},
+  {name:'ปาท่องโก๋ 1 คู่',cal:240,p:6,c:35,f:10,emoji:'🥐',meal:'breakfast'},
+  {name:'ขนมปังปิ้ง',cal:160,p:4,c:28,f:4,emoji:'🍞',meal:'breakfast'},
+  {name:'ข้าวกล้อง 1 ทัพพี',cal:120,p:3,c:25,f:1,emoji:'🍚',meal:'lunch'},
+  {name:'ข้าวขาว 1 ทัพพี',cal:130,p:2,c:28,f:0,emoji:'🍚',meal:'lunch'},
+  {name:'ข้าวเหนียว 1 ห่อ',cal:180,p:4,c:38,f:1,emoji:'🍚',meal:'breakfast'},
+  // ══════════════════════════════════════
+  // 🥤 เครื่องดื่ม/ของว่าง
+  // ══════════════════════════════════════
   {name:'นมจืด 1 แก้ว',cal:120,p:8,c:12,f:5,emoji:'🥛',meal:'breakfast'},
   {name:'นมถั่วเหลือง 1 แก้ว',cal:100,p:7,c:8,f:5,emoji:'🥛',meal:'breakfast'},
   {name:'กาแฟดำ (ไม่ใส่น้ำตาล)',cal:5,p:0,c:1,f:0,emoji:'☕',meal:'breakfast'},
@@ -405,7 +511,9 @@ const FOOD_DB=[
   {name:'กราโนล่าบาร์',cal:140,p:4,c:22,f:5,emoji:'🍫',meal:'snack'},
   {name:'อัลมอนด์ 10 เม็ด',cal:70,p:3,c:2,f:6,emoji:'🥜',meal:'snack'},
   {name:'ถั่วลิสง 1 กำมือ',cal:160,p:7,c:5,f:14,emoji:'🥜',meal:'snack'},
-  // === ผลไม้ ===
+  // ══════════════════════════════════════
+  // 🍌 ผลไม้
+  // ══════════════════════════════════════
   {name:'กล้วยหอม 1 ลูก',cal:105,p:1,c:27,f:0,emoji:'🍌',meal:'snack'},
   {name:'แอปเปิ้ล 1 ลูก',cal:95,p:0,c:25,f:0,emoji:'🍎',meal:'snack'},
   {name:'ส้ม 1 ลูก',cal:62,p:1,c:15,f:0,emoji:'🍊',meal:'snack'},
@@ -413,12 +521,24 @@ const FOOD_DB=[
   {name:'แตงโม 1 ชิ้น',cal:85,p:2,c:22,f:0,emoji:'🍉',meal:'snack'},
   {name:'มังคุด 3 ลูก',cal:70,p:1,c:17,f:0,emoji:'🍇',meal:'snack'},
   {name:'ฝรั่ง 1 ลูก',cal:68,p:1,c:14,f:1,emoji:'🍐',meal:'snack'},
-  // === ของหวาน ===
+  {name:'ลำไย 10 ลูก',cal:120,p:2,c:30,f:0,emoji:'🍇',meal:'snack'},
+  {name:'มะม่วงดิบ 1 ลูก',cal:100,p:1,c:24,f:1,emoji:'🥭',meal:'snack'},
+  {name:'สับปะรด 1 ชิ้น',cal:50,p:1,c:13,f:0,emoji:'🍍',meal:'snack'},
+  // ══════════════════════════════════════
+  // 🍰 ของหวาน/ขนมไทย
+  // ══════════════════════════════════════
   {name:'ไอศกรีม 1 สกู๊ป',cal:200,p:3,c:24,f:10,emoji:'🍦',meal:'snack'},
   {name:'เค้กช็อกโกแลต 1 ชิ้น',cal:350,p:5,c:45,f:18,emoji:'🍰',meal:'snack'},
   {name:'ชานมไข่มุก',cal:350,p:3,c:65,f:8,emoji:'🧋',meal:'snack'},
   {name:'ขนมครก 2 ชิ้น',cal:160,p:3,c:22,f:7,emoji:'🥞',meal:'snack'},
   {name:'โรตี 1 แผ่น',cal:280,p:5,c:40,f:12,emoji:'🫓',meal:'snack'},
+  {name:'ขนมถ้วย 2 ชิ้น',cal:180,p:2,c:28,f:8,emoji:'🍮',meal:'snack'},
+  {name:'บัวลอย 1 ถ้วย',cal:250,p:4,c:45,f:6,emoji:'🍡',meal:'snack'},
+  {name:'ข้าวเหนียวมะม่วง',cal:380,p:4,c:60,f:14,emoji:'🥭',meal:'snack'},
+  {name:'ข้าวเหนียวสังขยา',cal:320,p:6,c:50,f:12,emoji:'🍚',meal:'snack'},
+  {name:'ลูกชุบ 3 ชิ้น',cal:120,p:3,c:20,f:4,emoji:'🍬',meal:'snack'},
+  {name:'ทับทิมกรอบ 1 ถ้วย',cal:200,p:2,c:40,f:4,emoji:'🍧',meal:'snack'},
+  {name:'กล้วยบวชชี',cal:220,p:3,c:38,f:8,emoji:'🍌',meal:'snack'},
 ];
 const FAVORITES=[
   {name:'ไข่ต้ม 1 ฟอง',cal:75,p:7,c:0,f:5,emoji:'🥚'},{name:'อกไก่นุ่ม',cal:120,p:25,c:0,f:2,emoji:'🍗'},
