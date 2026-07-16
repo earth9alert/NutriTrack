@@ -145,6 +145,36 @@
         </div>
       </div>
 
+      <!-- Sleep Tracking -->
+      <div class="bg-white rounded-2xl shadow-sm border border-indigo-100 p-4">
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-2">
+            <span class="text-lg">😴</span>
+            <h2 class="text-xs font-semibold text-gray-400 tracking-wide">ชั่วโมงการนอน</h2>
+          </div>
+          <span class="text-[10px] text-gray-400" id="sleepDateLabel"></span>
+        </div>
+        <div class="flex items-center gap-3">
+          <div class="flex-1">
+            <div class="flex items-center gap-2">
+              <button onclick="adjustSleep(-0.5)" class="touch-btn w-10 h-10 rounded-xl bg-indigo-50 active:bg-indigo-100 flex items-center justify-center text-indigo-600 text-lg font-bold">−</button>
+              <div class="flex-1 text-center">
+                <span class="text-3xl font-bold text-indigo-600" id="sleepHours">0</span>
+                <span class="text-sm text-gray-400 ml-1">ชม.</span>
+              </div>
+              <button onclick="adjustSleep(0.5)" class="touch-btn w-10 h-10 rounded-xl bg-indigo-50 active:bg-indigo-100 flex items-center justify-center text-indigo-600 text-lg font-bold">+</button>
+            </div>
+          </div>
+          <button onclick="saveSleep()" class="h-12 px-5 bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-semibold rounded-xl shadow-md text-sm active:from-indigo-700 active:to-purple-700">💾 บันทึก</button>
+        </div>
+        <div class="flex items-center justify-between mt-2">
+          <div class="flex gap-1">
+            <span class="text-[9px] px-2 py-0.5 rounded-full" id="sleepQuality"></span>
+          </div>
+          <span class="text-[10px] text-gray-400" id="sleepStatus"></span>
+        </div>
+      </div>
+
       <!-- Food Diary - Today -->
       <div class="space-y-3">
         <h2 class="text-xs font-semibold text-gray-400 tracking-wide px-1">📖 บันทึกวันนี้</h2>
@@ -232,11 +262,19 @@
       </div>
       <div class="bg-white rounded-2xl shadow-sm border border-brand-100 p-4">
         <h2 class="text-xs font-semibold text-gray-400 tracking-wide mb-3">📈 สรุปวันนี้</h2>
-        <div class="grid grid-cols-3 gap-3 text-center">
+        <div class="grid grid-cols-4 gap-2 text-center">
           <div class="bg-brand-50 rounded-xl p-3"><p class="text-lg font-bold text-brand-700" id="summaryCal">0</p><p class="text-[10px] text-gray-500">kcal</p></div>
           <div class="bg-blue-50 rounded-xl p-3"><p class="text-lg font-bold text-blue-600" id="summaryItems">0</p><p class="text-[10px] text-gray-500">รายการ</p></div>
           <div class="bg-amber-50 rounded-xl p-3"><p class="text-lg font-bold text-amber-600" id="summaryMeals">0</p><p class="text-[10px] text-gray-500">มื้อ</p></div>
+          <div class="bg-indigo-50 rounded-xl p-3"><p class="text-lg font-bold text-indigo-600" id="summarySleep">0</p><p class="text-[10px] text-gray-500">ชม. นอน</p></div>
         </div>
+      </div>
+      <div class="bg-white rounded-2xl shadow-sm border border-indigo-100 p-4">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-xs font-semibold text-gray-400 tracking-wide">😴 สถิติการนอน 7 วัน</h2>
+          <span class="text-[10px] text-gray-400" id="sleepChartAvg"></span>
+        </div>
+        <div class="relative" style="height:160px"><canvas id="sleepChart"></canvas></div>
       </div>
       <button onclick="resetAll()" class="w-full border border-red-200 text-red-400 active:bg-red-50 font-medium py-3 rounded-xl text-sm">🗑️ ล้างข้อมูลทั้งหมด</button>
     </div>
@@ -296,6 +334,18 @@
 
 ALTER TABLE food_logs ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Allow all" ON food_logs
+  FOR ALL USING (true) WITH CHECK (true);
+
+-- ตารางบันทึกการนอน
+CREATE TABLE sleep_logs (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  sleep_hours REAL NOT NULL,
+  logged_date DATE DEFAULT CURRENT_DATE,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE sleep_logs ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow all" ON sleep_logs
   FOR ALL USING (true) WITH CHECK (true);</pre>
       </details>
       <div class="flex gap-2 mt-4">
@@ -542,7 +592,8 @@ const PRESETS=[
 ];
 
 let foodLog=JSON.parse(localStorage.getItem('nutritrack_log')||'[]');
-let searchActiveIndex=-1, weeklyChart=null, supabaseClient=null;
+let sleepLog=JSON.parse(localStorage.getItem('nutritrack_sleep')||'{}');
+let searchActiveIndex=-1, weeklyChart=null, sleepChart=null, supabaseClient=null;
 
 // ========== TAB NAVIGATION ==========
 function switchTab(pageId) {
@@ -554,15 +605,19 @@ function switchTab(pageId) {
   });
   document.getElementById('fab').style.display = pageId==='pageDashboard'?'flex':'none';
   window.scrollTo({top:0,behavior:'smooth'});
-  if(pageId==='pageStats') updateChart();
+  if(pageId==='pageStats'){updateChart();updateSleepChart();}
 }
 
 // ========== SUPABASE ==========
 function getSupaConfig(){return{url:localStorage.getItem('supa_url')||'',key:localStorage.getItem('supa_key')||''};}
-function initSupabase(){const cfg=getSupaConfig();if(cfg.url&&cfg.key&&typeof window.supabase!=='undefined'){try{supabaseClient=window.supabase.createClient(cfg.url,cfg.key);updateSyncStatus('online','Supabase');syncFromSupabase();}catch(e){supabaseClient=null;updateSyncStatus('error','เชื่อมต่อไม่ได้');}}else{updateSyncStatus('offline','localStorage');}}
+function initSupabase(){const cfg=getSupaConfig();if(cfg.url&&cfg.key&&typeof window.supabase!=='undefined'){try{supabaseClient=window.supabase.createClient(cfg.url,cfg.key);updateSyncStatus('online','Supabase');syncFromSupabase();syncSleepFromSupabase();}catch(e){supabaseClient=null;updateSyncStatus('error','เชื่อมต่อไม่ได้');}}else{updateSyncStatus('offline','localStorage');}}
 function updateSyncStatus(s,t){document.getElementById('syncDot').className='sync-dot '+s;document.getElementById('syncStatus').textContent=t;}
 async function syncToSupabase(item){if(!supabaseClient)return;try{const{error}=await supabaseClient.from('food_logs').insert({name:item.name,calories:item.cal,protein:item.protein,carbs:item.carbs,fats:item.fats,meal:item.meal,logged_date:item.date||TODAY,logged_time:item.time||''});if(error)throw error;updateSyncStatus('online','Supabase ✓');}catch(e){updateSyncStatus('error','Sync ล้มเหลว');}}
 async function syncFromSupabase(){if(!supabaseClient)return;try{const{data,error}=await supabaseClient.from('food_logs').select('*').eq('logged_date',TODAY).order('created_at',{ascending:true});if(error)throw error;if(data&&data.length>0){const ti=foodLog.filter(f=>f.date===TODAY);if(ti.length===0){data.forEach(r=>{foodLog.push({id:Date.now()+Math.random(),name:r.name,cal:r.calories,protein:r.protein,carbs:r.carbs,fats:r.fats,meal:r.meal,date:r.logged_date,time:r.logged_time||''});});saveLocal();renderAll();}}updateSyncStatus('online','Supabase ✓');}catch(e){updateSyncStatus('error','ดึงข้อมูลล้มเหลว');}}
+
+// ========== SLEEP SYNC ==========
+async function syncSleepToSupabase(hours){if(!supabaseClient)return;try{await supabaseClient.from('sleep_logs').delete().eq('logged_date',TODAY);const{error}=await supabaseClient.from('sleep_logs').insert({sleep_hours:hours,logged_date:TODAY});if(error)throw error;updateSyncStatus('online','Supabase ✓');}catch(e){updateSyncStatus('error','Sync นอนล้มเหลว');}}
+async function syncSleepFromSupabase(){if(!supabaseClient)return;try{const{data,error}=await supabaseClient.from('sleep_logs').select('*').order('logged_date',{ascending:false}).limit(30);if(error)throw error;if(data&&data.length>0){data.forEach(r=>{if(!sleepLog[r.logged_date])sleepLog[r.logged_date]=r.sleep_hours;});localStorage.setItem('nutritrack_sleep',JSON.stringify(sleepLog));renderSleep();updateSleepChart();}}catch(e){}}
 
 // ========== SETTINGS ==========
 function openSettings(){const cfg=getSupaConfig();document.getElementById('supaUrl').value=cfg.url;document.getElementById('supaKey').value=cfg.key;document.getElementById('settingsModal').classList.remove('hidden');}
@@ -573,7 +628,7 @@ function saveSupabaseConfig(){localStorage.setItem('supa_url',document.getElemen
 // ========== INIT ==========
 function init(){
   document.getElementById('currentDate').textContent=new Date().toLocaleDateString('th-TH',{weekday:'short',month:'short',day:'numeric'});
-  renderPresets();renderFavorites();renderAll();initChart();
+  renderPresets();renderFavorites();renderAll();initChart();initSleepChart();renderSleep();
   document.getElementById('foodForm').addEventListener('submit',handleAddFood);
   const si=document.getElementById('searchInput');
   si.addEventListener('input',handleSearch);si.addEventListener('focus',()=>{if(si.value.trim())handleSearch();});
@@ -602,11 +657,21 @@ function handleAddFood(e){e.preventDefault();const n=document.getElementById('fo
 function addFood(item){item.id=Date.now()+Math.random();item.date=TODAY;item.time=new Date().toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'});foodLog.push(item);saveLocal();syncToSupabase(item);renderAll();}
 function deleteFood(id){foodLog=foodLog.filter(f=>f.id!==id);saveLocal();renderAll();showToast('ลบแล้ว 🗑️');}
 function saveLocal(){localStorage.setItem('nutritrack_log',JSON.stringify(foodLog));}
-function resetAll(){if(confirm('ล้างข้อมูลทั้งหมด?')){foodLog=[];saveLocal();renderAll();showToast('รีเซ็ตแล้ว');switchTab('pageDashboard');}}
+function resetAll(){if(confirm('ล้างข้อมูลทั้งหมด?')){foodLog=[];sleepLog={};saveLocal();localStorage.setItem('nutritrack_sleep',JSON.stringify(sleepLog));renderAll();renderSleep();updateSleepChart();showToast('รีเซ็ตแล้ว');switchTab('pageDashboard');}}
 
 // ========== CHART ==========
 function initChart(){const ctx=document.getElementById('weeklyChart');if(!ctx)return;weeklyChart=new Chart(ctx,{type:'bar',data:{labels:[],datasets:[{label:'kcal',data:[],backgroundColor:'rgba(16,185,129,0.6)',borderColor:'#059669',borderWidth:1,borderRadius:6,barPercentage:0.7}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.parsed.y+' kcal'}}},scales:{y:{beginAtZero:true,grid:{color:'#f3f4f6'},ticks:{font:{size:9}}},x:{grid:{display:false},ticks:{font:{size:9}}}}}});updateChart();}
 function updateChart(){if(!weeklyChart)return;const days=[],cals=[];for(let i=6;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);const ds=d.toISOString().slice(0,10);days.push(d.toLocaleDateString('th-TH',{weekday:'short'})+' '+d.getDate());cals.push(Math.round(foodLog.filter(f=>f.date===ds).reduce((s,f)=>s+f.cal,0)));}weeklyChart.data.labels=days;weeklyChart.data.datasets[0].data=cals;weeklyChart.data.datasets[0].backgroundColor=cals.map(c=>c>GOALS.calories?'rgba(239,68,68,0.5)':'rgba(16,185,129,0.6)');weeklyChart.update();const avg=cals.reduce((a,b)=>a+b,0)/7;document.getElementById('chartAvg').textContent=`เฉลี่ย ${Math.round(avg)} kcal/วัน`;}
+
+// ========== SLEEP CHART ==========
+function initSleepChart(){const ctx=document.getElementById('sleepChart');if(!ctx)return;sleepChart=new Chart(ctx,{type:'bar',data:{labels:[],datasets:[{label:'ชม.',data:[],backgroundColor:'rgba(99,102,241,0.5)',borderColor:'#6366f1',borderWidth:1,borderRadius:6,barPercentage:0.7}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.parsed.y+' ชม.'}}},scales:{y:{beginAtZero:true,max:12,grid:{color:'#f3f4f6'},ticks:{font:{size:9},callback:v=>v+'ชม.'}},x:{grid:{display:false},ticks:{font:{size:9}}}}}});updateSleepChart();}
+function updateSleepChart(){if(!sleepChart)return;const days=[],hours=[];for(let i=6;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);const ds=d.toISOString().slice(0,10);days.push(d.toLocaleDateString('th-TH',{weekday:'short'})+' '+d.getDate());hours.push(sleepLog[ds]||0);}sleepChart.data.labels=days;sleepChart.data.datasets[0].data=hours;sleepChart.data.datasets[0].backgroundColor=hours.map(h=>h>=7?'rgba(99,102,241,0.5)':h>=5?'rgba(251,191,36,0.5)':'rgba(239,68,68,0.4)');sleepChart.update();const validH=hours.filter(h=>h>0),avg=validH.length?validH.reduce((a,b)=>a+b,0)/validH.length:0;document.getElementById('sleepChartAvg').textContent=avg>0?`เฉลี่ย ${avg.toFixed(1)} ชม./คืน`:'ยังไม่มีข้อมูล';}
+
+// ========== SLEEP TRACKING ==========
+function adjustSleep(delta){let h=parseFloat(document.getElementById('sleepHours').textContent)||0;h=Math.max(0,Math.min(24,h+delta));document.getElementById('sleepHours').textContent=h;updateSleepQuality(h);}
+function updateSleepQuality(h){const el=document.getElementById('sleepQuality');if(h===0){el.textContent='';el.className='text-[9px] px-2 py-0.5 rounded-full';}else if(h>=7){el.textContent='😊 นอนพอ';el.className='text-[9px] px-2 py-0.5 rounded-full bg-green-50 text-green-600';}else if(h>=5){el.textContent='😐 นอนน้อย';el.className='text-[9px] px-2 py-0.5 rounded-full bg-amber-50 text-amber-600';}else{el.textContent='😵 นอนไม่พอ';el.className='text-[9px] px-2 py-0.5 rounded-full bg-red-50 text-red-500';}}
+function saveSleep(){const h=parseFloat(document.getElementById('sleepHours').textContent)||0;if(h===0)return showToast('กรุณาใส่ชั่วโมงการนอน');sleepLog[TODAY]=h;localStorage.setItem('nutritrack_sleep',JSON.stringify(sleepLog));syncSleepToSupabase(h);renderSleep();updateSleepChart();showToast(`บันทึก ${h} ชม. ✓`);}
+function renderSleep(){const h=sleepLog[TODAY]||0;document.getElementById('sleepHours').textContent=h;document.getElementById('sleepDateLabel').textContent=new Date().toLocaleDateString('th-TH',{month:'short',day:'numeric'});updateSleepQuality(h);const el=document.getElementById('summarySleep');if(el)el.textContent=h;if(sleepLog[TODAY])document.getElementById('sleepStatus').textContent='บันทึกแล้ว ✓';}
 
 // ========== RENDER ==========
 function renderAll(){
@@ -626,6 +691,7 @@ function renderAll(){
   // Summary
   const se=document.getElementById('summaryCal'),si=document.getElementById('summaryItems'),sm=document.getElementById('summaryMeals');
   if(se){se.textContent=Math.round(tot.cal);si.textContent=tl.length;sm.textContent=new Set(tl.map(f=>f.meal)).size;}
+  const slEl=document.getElementById('summarySleep');if(slEl)slEl.textContent=sleepLog[TODAY]||0;
 
   ['breakfast','lunch','dinner','snack'].forEach(meal=>{
     const items=tl.filter(f=>f.meal===meal),list=document.getElementById(meal+'List');
