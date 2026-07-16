@@ -185,7 +185,12 @@
 
       <!-- Search -->
       <div class="bg-white rounded-2xl shadow-sm border border-brand-100 p-4">
-        <h2 class="text-xs font-semibold text-gray-400 tracking-wide mb-3">🔍 ค้นหาอาหาร</h2>
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-xs font-semibold text-gray-400 tracking-wide">🔍 ค้นหาอาหาร</h2>
+          <select id="searchMealSelect" class="text-[11px] border border-brand-200 rounded-lg px-2 py-1.5 bg-brand-50 text-brand-700 focus:outline-none touch-btn">
+            <option value="breakfast">🌅 เช้า</option><option value="lunch" selected>☀️ กลางวัน</option><option value="dinner">🌙 เย็น</option><option value="snack">🍪 ว่าง</option>
+          </select>
+        </div>
         <div class="relative">
           <div class="relative">
             <svg class="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
@@ -194,6 +199,7 @@
           </div>
           <div id="searchDropdown" class="hidden absolute z-40 w-full mt-1 bg-white border border-brand-100 rounded-xl shadow-lg overflow-hidden search-dropdown"></div>
         </div>
+        <p class="text-[10px] text-gray-400 mt-2">💡 แตะเมนูเพื่อเพิ่มเข้าบันทึกทันที ไม่ต้องกรอกแคลอรีเอง</p>
       </div>
 
       <!-- Presets -->
@@ -315,16 +321,104 @@ const GOALS={calories:1800,protein:120,carbs:150,fats:50};
 const MEALS={breakfast:'มื้อเช้า',lunch:'มื้อกลางวัน',dinner:'มื้อเย็น',snack:'ของว่าง'};
 const TODAY=new Date().toISOString().slice(0,10);
 const FOOD_DB=[
-  {name:'ข้าวกะเพราไก่ไข่ดาว',cal:550,p:28,c:65,f:18,emoji:'🍛',meal:'lunch'},{name:'ข้าวผัดหมู',cal:480,p:18,c:60,f:16,emoji:'🍚',meal:'lunch'},
-  {name:'ก๋วยเตี๋ยวเส้นเล็กน้ำใส',cal:320,p:15,c:45,f:8,emoji:'🍜',meal:'lunch'},{name:'ส้มตำไทย',cal:150,p:5,c:22,f:5,emoji:'🥗',meal:'lunch'},
-  {name:'อกไก่ต้ม',cal:165,p:31,c:0,f:4,emoji:'🍗',meal:'lunch'},{name:'ไข่เจียว',cal:180,p:12,c:2,f:14,emoji:'🍳',meal:'breakfast'},
-  {name:'ข้าวกล้อง 1 ทัพพี',cal:120,p:3,c:25,f:1,emoji:'🍚',meal:'lunch'},{name:'นมจืด 1 แก้ว',cal:120,p:8,c:12,f:5,emoji:'🥛',meal:'breakfast'},
-  {name:'กาแฟดำ (ไม่ใส่น้ำตาล)',cal:5,p:0,c:1,f:0,emoji:'☕',meal:'breakfast'},{name:'อกไก่นุ่ม',cal:120,p:25,c:0,f:2,emoji:'🍗',meal:'lunch'},
-  {name:'ข้าวมันไก่',cal:600,p:20,c:75,f:25,emoji:'🍚',meal:'lunch'},{name:'ไข่ต้ม 1 ฟอง',cal:75,p:7,c:0,f:5,emoji:'🥚',meal:'breakfast'},
-  {name:'เวย์โปรตีน 1 สกู๊ป',cal:120,p:25,c:3,f:1,emoji:'🥤',meal:'snack'},{name:'ข้าวเหนียวหมูปิ้ง',cal:400,p:15,c:55,f:14,emoji:'🍖',meal:'breakfast'},
-  {name:'ก๋วยเตี๋ยวต้มยำ',cal:350,p:15,c:45,f:12,emoji:'🍜',meal:'lunch'},{name:'กล้วยหอม 1 ลูก',cal:105,p:1,c:27,f:0,emoji:'🍌',meal:'snack'},
-  {name:'ข้าวต้มหมู',cal:280,p:12,c:40,f:7,emoji:'🥣',meal:'breakfast'},{name:'ผัดผักบุ้งไฟแดง',cal:120,p:4,c:10,f:7,emoji:'🥬',meal:'dinner'},
-  {name:'ต้มจืดเต้าหู้หมูสับ',cal:200,p:18,c:8,f:11,emoji:'🍲',meal:'dinner'},{name:'โยเกิร์ตไขมันต่ำ',cal:90,p:8,c:12,f:1,emoji:'🥛',meal:'snack'},
+  // === อาหารจานเดียว ===
+  {name:'ข้าวกะเพราไก่ไข่ดาว',cal:550,p:28,c:65,f:18,emoji:'🍛',meal:'lunch'},
+  {name:'ข้าวกะเพราหมู',cal:520,p:22,c:62,f:20,emoji:'🍛',meal:'lunch'},
+  {name:'ข้าวกะเพราหมูไข่ดาว',cal:600,p:28,c:65,f:24,emoji:'🍛',meal:'lunch'},
+  {name:'ข้าวผัดหมู',cal:480,p:18,c:60,f:16,emoji:'🍚',meal:'lunch'},
+  {name:'ข้าวผัดไก่',cal:460,p:22,c:58,f:14,emoji:'🍚',meal:'lunch'},
+  {name:'ข้าวผัดกุ้ง',cal:420,p:18,c:55,f:14,emoji:'🍚',meal:'lunch'},
+  {name:'ข้าวผัดปู',cal:450,p:20,c:58,f:15,emoji:'🍚',meal:'lunch'},
+  {name:'ข้าวมันไก่',cal:600,p:20,c:75,f:25,emoji:'🍚',meal:'lunch'},
+  {name:'ข้าวขาหมู',cal:650,p:25,c:70,f:30,emoji:'🍖',meal:'lunch'},
+  {name:'ข้าวหมูแดง',cal:550,p:28,c:72,f:16,emoji:'🍚',meal:'lunch'},
+  {name:'ข้าวหมูกรอบ',cal:580,p:22,c:68,f:24,emoji:'🍚',meal:'lunch'},
+  {name:'ข้าวคลุกกะปิ',cal:480,p:18,c:65,f:16,emoji:'🍚',meal:'lunch'},
+  {name:'ข้าวผัดอเมริกัน',cal:520,p:20,c:60,f:22,emoji:'🍳',meal:'lunch'},
+  // === ก๋วยเตี๋ยว/เส้น ===
+  {name:'ก๋วยเตี๋ยวเส้นเล็กน้ำใส',cal:320,p:15,c:45,f:8,emoji:'🍜',meal:'lunch'},
+  {name:'ก๋วยเตี๋ยวต้มยำ',cal:350,p:15,c:45,f:12,emoji:'🍜',meal:'lunch'},
+  {name:'ก๋วยเตี๋ยวแห้ง',cal:380,p:18,c:50,f:12,emoji:'🍜',meal:'lunch'},
+  {name:'บะหมี่แห้ง',cal:420,p:18,c:52,f:16,emoji:'🍜',meal:'lunch'},
+  {name:'บะหมี่น้ำ',cal:380,p:16,c:48,f:12,emoji:'🍜',meal:'lunch'},
+  {name:'ก๋วยเตี๋ยวเรือ',cal:280,p:14,c:38,f:8,emoji:'🍜',meal:'lunch'},
+  {name:'ผัดไทย',cal:450,p:15,c:60,f:18,emoji:'🍝',meal:'lunch'},
+  {name:'ผัดซีอิ๊ว',cal:420,p:14,c:58,f:16,emoji:'🍝',meal:'lunch'},
+  {name:'ราดหน้า',cal:480,p:18,c:60,f:18,emoji:'🍲',meal:'lunch'},
+  {name:'ขนมจีนน้ำยา',cal:320,p:12,c:50,f:8,emoji:'🍜',meal:'lunch'},
+  {name:'เย็นตาโฟ',cal:300,p:12,c:40,f:10,emoji:'🍜',meal:'lunch'},
+  // === แกง/ต้ม ===
+  {name:'แกงเขียวหวานไก่',cal:380,p:22,c:18,f:26,emoji:'🍲',meal:'lunch'},
+  {name:'แกงเผ็ดหมู',cal:350,p:20,c:15,f:24,emoji:'🍲',meal:'lunch'},
+  {name:'แกงส้มผักรวม',cal:180,p:8,c:20,f:8,emoji:'🍲',meal:'lunch'},
+  {name:'ต้มยำกุ้ง',cal:200,p:18,c:12,f:10,emoji:'🍲',meal:'dinner'},
+  {name:'ต้มข่าไก่',cal:250,p:20,c:10,f:16,emoji:'🍲',meal:'dinner'},
+  {name:'ต้มจืดเต้าหู้หมูสับ',cal:200,p:18,c:8,f:11,emoji:'🍲',meal:'dinner'},
+  {name:'ต้มจืดวุ้นเส้น',cal:180,p:12,c:20,f:6,emoji:'🍲',meal:'dinner'},
+  {name:'แกงจืดมะระ',cal:160,p:10,c:12,f:8,emoji:'🍲',meal:'dinner'},
+  {name:'พะโล้',cal:280,p:15,c:25,f:14,emoji:'🍲',meal:'dinner'},
+  // === ผัด ===
+  {name:'ผัดผักบุ้งไฟแดง',cal:120,p:4,c:10,f:7,emoji:'🥬',meal:'dinner'},
+  {name:'ผัดกะเพราไข่',cal:220,p:12,c:8,f:16,emoji:'🍳',meal:'lunch'},
+  {name:'ผัดพริกแกงหมู',cal:280,p:18,c:15,f:18,emoji:'🌶️',meal:'dinner'},
+  {name:'ผัดคะน้าหมูกรอบ',cal:320,p:18,c:12,f:22,emoji:'🥬',meal:'dinner'},
+  {name:'ผัดผักรวมมิตร',cal:150,p:6,c:15,f:8,emoji:'🥗',meal:'dinner'},
+  // === อาหารเช้าง่ายๆ ===
+  {name:'ไข่เจียว',cal:180,p:12,c:2,f:14,emoji:'🍳',meal:'breakfast'},
+  {name:'ไข่ต้ม 1 ฟอง',cal:75,p:7,c:0,f:5,emoji:'🥚',meal:'breakfast'},
+  {name:'ไข่กระทะ',cal:320,p:18,c:15,f:22,emoji:'🍳',meal:'breakfast'},
+  {name:'โจ๊กหมู',cal:280,p:12,c:42,f:7,emoji:'🥣',meal:'breakfast'},
+  {name:'ข้าวต้มหมู',cal:280,p:12,c:40,f:7,emoji:'🥣',meal:'breakfast'},
+  {name:'ข้าวต้มกุ้ง',cal:250,p:14,c:38,f:5,emoji:'🥣',meal:'breakfast'},
+  {name:'ข้าวเหนียวหมูปิ้ง',cal:400,p:15,c:55,f:14,emoji:'🍖',meal:'breakfast'},
+  {name:'ปาท่องโก๋ 1 คู่',cal:240,p:6,c:35,f:10,emoji:'🥐',meal:'breakfast'},
+  {name:'ขนมปังปิ้ง',cal:160,p:4,c:28,f:4,emoji:'🍞',meal:'breakfast'},
+  {name:'ข้าวกล้อง 1 ทัพพี',cal:120,p:3,c:25,f:1,emoji:'🍚',meal:'lunch'},
+  {name:'ข้าวขาว 1 ทัพพี',cal:130,p:2,c:28,f:0,emoji:'🍚',meal:'lunch'},
+  // === ส้มตำ/ยำ ===
+  {name:'ส้มตำไทย',cal:150,p:5,c:22,f:5,emoji:'🥗',meal:'lunch'},
+  {name:'ส้มตำปู',cal:140,p:8,c:18,f:4,emoji:'🥗',meal:'lunch'},
+  {name:'ยำวุ้นเส้น',cal:180,p:12,c:22,f:5,emoji:'🥗',meal:'lunch'},
+  {name:'ยำทูน่า',cal:160,p:22,c:8,f:5,emoji:'🥗',meal:'lunch'},
+  {name:'ลาบหมู',cal:220,p:20,c:8,f:12,emoji:'🥗',meal:'lunch'},
+  {name:'น้ำตกหมู',cal:200,p:18,c:8,f:12,emoji:'🥗',meal:'lunch'},
+  // === เนื้อสัตว์/โปรตีน ===
+  {name:'อกไก่ต้ม',cal:165,p:31,c:0,f:4,emoji:'🍗',meal:'lunch'},
+  {name:'อกไก่นุ่ม',cal:120,p:25,c:0,f:2,emoji:'🍗',meal:'lunch'},
+  {name:'อกไก่ย่าง',cal:180,p:30,c:2,f:6,emoji:'🍗',meal:'lunch'},
+  {name:'ไก่ทอด 1 ชิ้น',cal:250,p:18,c:12,f:16,emoji:'🍗',meal:'lunch'},
+  {name:'ปลาทูทอด',cal:220,p:22,c:5,f:14,emoji:'🐟',meal:'lunch'},
+  {name:'ปลานิลย่าง',cal:180,p:32,c:0,f:5,emoji:'🐟',meal:'dinner'},
+  {name:'กุ้งเผา 5 ตัว',cal:120,p:24,c:0,f:2,emoji:'🦐',meal:'dinner'},
+  {name:'หมูย่าง 3 ชิ้น',cal:280,p:22,c:5,f:20,emoji:'🥩',meal:'lunch'},
+  {name:'สเต็กไก่',cal:220,p:35,c:5,f:7,emoji:'🍗',meal:'lunch'},
+  {name:'ทูน่ากระป๋อง',cal:120,p:26,c:0,f:1,emoji:'🐟',meal:'lunch'},
+  // === เครื่องดื่ม/ของว่าง ===
+  {name:'นมจืด 1 แก้ว',cal:120,p:8,c:12,f:5,emoji:'🥛',meal:'breakfast'},
+  {name:'นมถั่วเหลือง 1 แก้ว',cal:100,p:7,c:8,f:5,emoji:'🥛',meal:'breakfast'},
+  {name:'กาแฟดำ (ไม่ใส่น้ำตาล)',cal:5,p:0,c:1,f:0,emoji:'☕',meal:'breakfast'},
+  {name:'กาแฟใส่นม',cal:80,p:3,c:10,f:3,emoji:'☕',meal:'breakfast'},
+  {name:'ชาเขียวไม่หวาน',cal:5,p:0,c:1,f:0,emoji:'🍵',meal:'snack'},
+  {name:'น้ำส้มคั้น 1 แก้ว',cal:110,p:2,c:26,f:0,emoji:'🍊',meal:'snack'},
+  {name:'เวย์โปรตีน 1 สกู๊ป',cal:120,p:25,c:3,f:1,emoji:'🥤',meal:'snack'},
+  {name:'โยเกิร์ตไขมันต่ำ',cal:90,p:8,c:12,f:1,emoji:'🥛',meal:'snack'},
+  {name:'กราโนล่าบาร์',cal:140,p:4,c:22,f:5,emoji:'🍫',meal:'snack'},
+  {name:'อัลมอนด์ 10 เม็ด',cal:70,p:3,c:2,f:6,emoji:'🥜',meal:'snack'},
+  {name:'ถั่วลิสง 1 กำมือ',cal:160,p:7,c:5,f:14,emoji:'🥜',meal:'snack'},
+  // === ผลไม้ ===
+  {name:'กล้วยหอม 1 ลูก',cal:105,p:1,c:27,f:0,emoji:'🍌',meal:'snack'},
+  {name:'แอปเปิ้ล 1 ลูก',cal:95,p:0,c:25,f:0,emoji:'🍎',meal:'snack'},
+  {name:'ส้ม 1 ลูก',cal:62,p:1,c:15,f:0,emoji:'🍊',meal:'snack'},
+  {name:'มะละกอสุก 1 จาน',cal:60,p:1,c:15,f:0,emoji:'🥭',meal:'snack'},
+  {name:'แตงโม 1 ชิ้น',cal:85,p:2,c:22,f:0,emoji:'🍉',meal:'snack'},
+  {name:'มังคุด 3 ลูก',cal:70,p:1,c:17,f:0,emoji:'🍇',meal:'snack'},
+  {name:'ฝรั่ง 1 ลูก',cal:68,p:1,c:14,f:1,emoji:'🍐',meal:'snack'},
+  // === ของหวาน ===
+  {name:'ไอศกรีม 1 สกู๊ป',cal:200,p:3,c:24,f:10,emoji:'🍦',meal:'snack'},
+  {name:'เค้กช็อกโกแลต 1 ชิ้น',cal:350,p:5,c:45,f:18,emoji:'🍰',meal:'snack'},
+  {name:'ชานมไข่มุก',cal:350,p:3,c:65,f:8,emoji:'🧋',meal:'snack'},
+  {name:'ขนมครก 2 ชิ้น',cal:160,p:3,c:22,f:7,emoji:'🥞',meal:'snack'},
+  {name:'โรตี 1 แผ่น',cal:280,p:5,c:40,f:12,emoji:'🫓',meal:'snack'},
 ];
 const FAVORITES=[
   {name:'ไข่ต้ม 1 ฟอง',cal:75,p:7,c:0,f:5,emoji:'🥚'},{name:'อกไก่นุ่ม',cal:120,p:25,c:0,f:2,emoji:'🍗'},
@@ -383,9 +477,9 @@ function installPWA(){if(window._deferredPrompt){window._deferredPrompt.prompt()
 
 // ========== SEARCH ==========
 function handleSearch(){const q=document.getElementById('searchInput').value.trim().toLowerCase(),d=document.getElementById('searchDropdown');document.getElementById('searchClear').classList.toggle('hidden',!q);if(!q){d.classList.add('hidden');return;}const r=FOOD_DB.filter(f=>f.name.toLowerCase().includes(q));if(!r.length){d.innerHTML='<div class="px-4 py-8 text-center text-sm text-gray-400">ไม่พบเมนู 🔍</div>';d.classList.remove('hidden');return;}
-d.innerHTML=r.map(f=>`<button type="button" onclick="selectSearchResult(${FOOD_DB.indexOf(f)})" class="search-item w-full flex items-center gap-3 px-4 py-3 text-left border-b border-gray-50 last:border-0"><span class="text-xl flex-shrink-0">${f.emoji}</span><div class="flex-1 min-w-0"><p class="text-sm font-medium text-gray-700 truncate">${hlMatch(f.name,q)}</p><div class="flex items-center gap-2 mt-0.5"><span class="text-[11px] text-brand-600 font-semibold">${f.cal} kcal</span><span class="text-[10px] text-blue-500">P:${f.p}</span><span class="text-[10px] text-orange-500">C:${f.c}</span><span class="text-[10px] text-red-400">F:${f.f}</span></div></div></button>`).join('');d.classList.remove('hidden');}
+d.innerHTML=r.map(f=>`<button type="button" onclick="quickAddFromSearch(${FOOD_DB.indexOf(f)})" class="search-item w-full flex items-center gap-3 px-4 py-3 text-left border-b border-gray-50 last:border-0"><span class="text-xl flex-shrink-0">${f.emoji}</span><div class="flex-1 min-w-0"><p class="text-sm font-medium text-gray-700 truncate">${hlMatch(f.name,q)}</p><div class="flex items-center gap-2 mt-0.5"><span class="text-[11px] text-brand-600 font-semibold">${f.cal} kcal</span><span class="text-[10px] text-blue-500">P:${f.p}</span><span class="text-[10px] text-orange-500">C:${f.c}</span><span class="text-[10px] text-red-400">F:${f.f}</span></div></div><span class="flex-shrink-0 w-8 h-8 rounded-full bg-brand-100 flex items-center justify-center text-brand-600 text-lg font-bold">+</span></button>`).join('');d.classList.remove('hidden');}
 function hlMatch(t,q){const i=t.toLowerCase().indexOf(q);if(i===-1)return t;return t.slice(0,i)+'<span class="bg-yellow-100 text-yellow-800 font-semibold">'+t.slice(i,i+q.length)+'</span>'+t.slice(i+q.length);}
-function selectSearchResult(i){const f=FOOD_DB[i];document.getElementById('foodName').value=f.name;document.getElementById('foodCal').value=f.cal;document.getElementById('foodProtein').value=f.p;document.getElementById('foodCarbs').value=f.c;document.getElementById('foodFats').value=f.f;if(f.meal)document.getElementById('foodMeal').value=f.meal;clearSearch();showToast(`เลือก "${f.name}" — กดบันทึก ✓`);}
+function quickAddFromSearch(i){const f=FOOD_DB[i],m=document.getElementById('searchMealSelect').value;addFood({name:f.name,cal:f.cal,protein:f.p,carbs:f.c,fats:f.f,meal:m});clearSearch();showToast(`+${f.name} → ${MEALS[m]} ✓`);switchTab('pageDashboard');}
 function clearSearch(){document.getElementById('searchInput').value='';document.getElementById('searchDropdown').classList.add('hidden');document.getElementById('searchClear').classList.add('hidden');}
 
 // ========== FAVORITES & PRESETS ==========
